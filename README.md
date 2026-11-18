@@ -23,6 +23,7 @@ and give identical output. What changed is listed under
 - [Getting started](#getting-started)
 - [Designing primers](#designing-primers)
 - [Checking primers you already have](#checking-primers-you-already-have)
+- [Degenerate (wobble) primers](#degenerate-wobble-primers)
 - [Screening a multiplex set (AutoDimer)](#screening-a-multiplex-set-autodimer)
 - [Preferences](#preferences)
 - [Command line](#command-line)
@@ -126,6 +127,34 @@ The **Primer analysis** tab takes one or two primers and reports Tm,
 length, GC, ΔH/ΔS/ΔG and every predicted primer-dimer, using the reaction
 conditions from *Preferences*. Use it to check primers from a paper or an
 older design before ordering.
+
+## Degenerate (wobble) primers
+
+Universal and family-specific primers often carry wobble positions written
+as IUPAC codes, such as `AGAGTTTGATYMTGGCTCAG` (Y = C or T, M = A or C).
+Such a primer is really an equimolar pool of every oligo the codes allow.
+The **Degenerate primers** tab describes that pool:
+
+1. Enter the primer, 5′→3′, and click **Analyse**. All IUPAC codes are
+   accepted (U is read as T); an *IUPAC nucleotide codes* table is under
+   the form.
+2. The **pool complexity** is the number of distinct oligos (4 in the
+   example). Tm and %GC are given as minimum / average / maximum over the
+   pool, using the reaction conditions from *Preferences*; the average
+   assumes every oligo is equally abundant.
+3. A **sequence logo** shows which bases each position carries and in what
+   proportion.
+4. **Disambiguate** lists every oligo with its own Tm and %GC, with the wobble
+   positions highlighted. *Export table (TSV)* downloads the list.
+5. **Inosine replacement** replaces every position that stands for at least
+   *N* bases with inosine (I), which pairs with any base. With *N* = 2 every
+   wobble position is replaced, and the example becomes
+   `AGAGTTTGATIITGGCTCAG`, a single oligo. Higher values replace only the
+   most degenerate codes (3: B, D, H, V and N; 4: N only).
+
+Tm is only calculated for pools of up to 4,096 oligos; %GC is exact for any
+pool size. There are no nearest-neighbour parameters for inosine, so the Tm
+of the inosine primer is not calculated.
 
 ## Screening a multiplex set (AutoDimer)
 
@@ -295,6 +324,7 @@ src/pyprimer/
   ensembl.py     Ensembl REST client
   report.py      primer analysis, sequence maps, text reports
   autodimer.py   AutoDimer primer-dimer and hairpin screening of oligo sets
+  degenerate.py  degenerate (IUPAC) primer pools, sequence logo data, inosine
   cli.py         command-line entry point
   web/           Flask app factory, JSON API, template and static assets
   data/gcg.603   REBASE restriction enzyme database

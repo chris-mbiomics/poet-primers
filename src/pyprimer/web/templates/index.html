@@ -96,6 +96,7 @@
     <button role="tab" data-tab="qpcr" aria-selected="false">Real-time PCR</button>
     <button role="tab" data-tab="sequencing" aria-selected="false">Sequencing</button>
     <button role="tab" data-tab="analyse" aria-selected="false">Primer analysis</button>
+    <button role="tab" data-tab="degenerate" aria-selected="false">Degenerate primers</button>
     <button role="tab" data-tab="autodimer" aria-selected="false">AutoDimer</button>
     <button role="tab" data-tab="prefs" aria-selected="false">Preferences</button>
   </nav>
@@ -225,6 +226,46 @@
     <section class="results" aria-live="polite">
       <div class="status" data-role="status"></div>
       <div class="details" data-role="details" hidden></div>
+    </section>
+  </section>
+
+  <!-- Degenerate primers -->
+  <section class="panel" id="tab-degenerate" data-mode="degenerate" role="tabpanel" hidden>
+    <form class="inputs" novalidate>
+      <fieldset class="card">
+        <legend>Degenerate primer (5′→3′)</legend>
+        <p class="help">Wobble positions use IUPAC codes. The primer is treated as an equimolar pool of every oligo it stands for; Tm uses the reaction conditions from <em>Preferences</em>.</p>
+        <label class="field"><span>Primer</span><input type="text" data-path="sequence" class="mono" spellcheck="false" autocomplete="off" placeholder="e.g. AGAGTTTGATYMTGGCTCAG"></label>
+      </fieldset>
+      <fieldset class="card">
+        <legend>Inosine replacement</legend>
+        <p class="help">Inosine (I) pairs with every base, so replacing wobble positions with it shrinks the pool to fewer oligos.</p>
+        <div class="grid">
+          {{ num("inosine_threshold", "Replace positions with ≥ N bases", "1", 2, hint="2 replaces every wobble position; 3 only B, D, H, V and N; 4 only N") }}
+        </div>
+      </fieldset>
+      <button type="submit" class="btn primary">Analyse</button>
+      <details class="card iupac">
+        <summary>IUPAC nucleotide codes</summary>
+        <table class="iupac-table">
+          <thead><tr><th>Code</th><th>Meaning</th><th colspan="4">Bases</th></tr></thead>
+          <tbody>
+          {% for code, meaning, bases in [
+            ("A", "adenine", "A"), ("C", "cytosine", "C"), ("G", "guanine", "G"), ("T", "thymine", "T"),
+            ("U", "uracil (read as T)", "T"), ("W", "weak", "AT"), ("S", "strong", "CG"), ("M", "amino", "AC"),
+            ("K", "keto", "GT"), ("R", "purine", "AG"), ("Y", "pyrimidine", "CT"), ("B", "not A", "CGT"),
+            ("D", "not C", "AGT"), ("H", "not G", "ACT"), ("V", "not T", "ACG"), ("N", "any base", "ACGT"),
+            ("I", "inosine (pairs with any base)", "")] %}
+            <tr><td class="code">{{ code }}</td><td>{{ meaning }}</td>
+              {% for b in "ACGT" %}<td class="base b-{{ b }}">{{ b if b in bases else "" }}</td>{% endfor %}</tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </details>
+    </form>
+    <section class="results" aria-live="polite">
+      <div class="status" data-role="status"></div>
+      <div class="details degenerate" data-role="details" hidden></div>
     </section>
   </section>
 

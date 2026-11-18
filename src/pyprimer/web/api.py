@@ -23,6 +23,13 @@ from ..cloning import (
     cloning_tail,
     find_enzyme,
 )
+from ..degenerate import (
+    MAX_VARIANTS,
+    analyse_degenerate,
+    base_probabilities,
+    complexity,
+    replace_with_inosine,
+)
 from ..design import (
     BisulphiteSettings,
     DesignError,
@@ -152,6 +159,13 @@ class ExonRequest:
 class AutoDimerRequest:
     sequences: str = ""
     settings: AutoDimerSettings = field(default_factory=AutoDimerSettings)
+
+
+@dataclass(frozen=True)
+class DegenerateRequest:
+    sequence: str = ""
+    inosine_threshold: int = 2
+    conditions: Conditions = field(default_factory=Conditions)
 
 
 # --------------------------------------------------------------------------
@@ -325,6 +339,27 @@ def autodimer() -> Response:
         hairpins={"hits": dump(hairpins.hits), "comparisons": hairpins.comparisons},
         sequences=len(oligos),
         text=full_report(dimers, hairpins),
+    )
+
+
+@api.post("/degenerate")
+def degenerate_primer() -> Response:
+    """Oligo pool statistics, logo data and inosine form of a degenerate primer."""
+    req = build(DegenerateRequest, _payload())
+    try:
+        analysis = analyse_degenerate(req.sequence, req.conditions)
+        inosine = replace_with_inosine(analysis.sequence, req.inosine_threshold)
+    except ValueError as exc:
+        raise ApiError(str(exc)) from exc
+    return jsonify(
+        **dump(analysis),
+        max_variants=MAX_VARIANTS,
+        probabilities=base_probabilities(analysis.sequence),
+        inosine={
+            "sequence": inosine,
+            "complexity": complexity(inosine),
+            "replaced": inosine.count("I"),
+        },
     )
 
 

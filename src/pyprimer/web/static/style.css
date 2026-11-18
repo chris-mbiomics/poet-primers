@@ -294,3 +294,32 @@ dialog::backdrop { background: rgb(0 0 0 / .35); }
 .results-table.autodimer pre { margin: 0; }
 .autodimer-section h3 { margin: 4px 0 8px; }
 .autodimer-section h3 .muted { font-weight: 400; text-transform: none; letter-spacing: 0; }
+
+/* Degenerate primers */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.tile { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; }
+.tile .label { font-size: 12px; color: var(--muted); font-weight: 600; }
+.tile .value { font-size: 18px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.tile .note { font-size: 12px; color: var(--muted); }
+.logo-wrap { overflow-x: auto; }
+.logo-svg { display: block; max-width: none; }
+.logo-svg .tick { stroke: var(--muted); }
+.logo-svg .axis { fill: var(--muted); font: 10.5px var(--sans); }
+.logo-svg .glyph { font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-weight: 700; }
+.b-A { --b: #1a9a3a; } .b-C { --b: #2366c4; } .b-G { --b: #e8960c; } .b-T { --b: #d0312d; }
+@media (prefers-color-scheme: dark) {
+  .b-A { --b: #4cc96a; } .b-C { --b: #6aa1ff; } .b-G { --b: #f5b13d; } .b-T { --b: #ff6b62; }
+}
+.logo-svg .glyph { fill: var(--b); }
+.ino-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ino-seq { font: 600 14px var(--mono); word-break: break-all; }
+.ino-seq .ino, .results-table.variants .wob { color: var(--accent); font-weight: 700; }
+.inosine h3 { margin-top: 0; }
+.inosine p { margin: 4px 0 0; font-size: 12.5px; }
+.results-table.variants tbody tr { cursor: default; }
+.iupac summary { margin: 0; }
+.iupac-table { border-collapse: collapse; font-size: 12.5px; margin-top: 10px; width: 100%; }
+.iupac-table th { text-align: left; color: var(--muted); font-weight: 600; padding: 3px 8px 3px 0; border-bottom: 1px solid var(--border); }
+.iupac-table td { padding: 3px 8px 3px 0; border-bottom: 1px solid var(--border); }
+.iupac-table td.code { font: 700 13px var(--mono); }
+.iupac-table td.base { font: 700 12.5px var(--mono); color: var(--b); width: 22px; }

@@ -709,6 +709,194 @@
     });
   }
 
+  // ---------------------------------------------------- degenerate primers
+
+  const DEGENERATE_KEY = "pyprimer.degenerate.v1";
+  const LOGO_BASES = "ACGT";
+  const VARIANT_COLUMNS = [
+    // label, key, numeric
+    ["#", "index", true],
+    ["Oligo", "seq", false],
+    ["Tm (°C)", "tm", true],
+    ["%GC", "gc", true],
+  ];
+
+  const SUPERSCRIPT = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+  const formatCount = (n) => {
+    if (n < 1e9) return n.toLocaleString();
+    const [mantissa, exp] = n.toExponential(2).split("e+");
+    return `${mantissa} × 10${[...exp].map((d) => SUPERSCRIPT[d]).join("")}`;
+  };
+
+  function logoSvg(probabilities) {
+    const col = 22, height = 110, left = 34, top = 8, bottom = 22;
+    const width = left + probabilities.length * col + 6;
+    const y = (p) => top + height * (1 - p);
+    const ticks = [0, 0.5, 1]
+      .map((p) => `<line class="tick" x1="${left - 4}" x2="${left}" y1="${y(p)}" y2="${y(p)}"/>
+        <text class="axis" x="${left - 6}" y="${y(p) + 3.5}" text-anchor="end">${p.toFixed(1)}</text>`)
+      .join("");
+    const letters = probabilities
+      .map((probs, i) => {
+        // Stack the least likely base at the bottom; ties put A on top.
+        const stack = Object.entries(probs).sort((a, b) => a[1] - b[1] || b[0].localeCompare(a[0]));
+        let base = 0;
+        return stack
+          .map(([b, p]) => {
+            const rect = { x: left + i * col + 1, y: y(base + p), w: col - 2, h: height * p };
+            base += p;
+            return `<text class="glyph b-${b}" data-rect="${rect.x},${rect.y},${rect.w},${rect.h}">${b}</text>`;
+          })
+          .join("");
+      })
+      .join("");
+    const positions = probabilities
+      .map((_, i) => ((i + 1) % 5 === 0 || i === 0 ? `<text class="axis" x="${left + i * col + col / 2}" y="${top + height + 15}" text-anchor="middle">${i + 1}</text>` : ""))
+      .join("");
+    return `<svg class="logo-svg" viewBox="0 0 ${width} ${top + height + bottom}" width="${width}" role="img" aria-label="Sequence logo">
+      <line class="tick" x1="${left}" x2="${left}" y1="${top}" y2="${top + height}"/>${ticks}${letters}${positions}
+      <text class="axis" transform="translate(9 ${top + height / 2}) rotate(-90)" text-anchor="middle">probability</text></svg>`;
+  }
+
+  // Scale each glyph so its ink fills its rectangle exactly (needs layout, so
+  // it runs after the SVG is in the visible document).
+  function fitGlyphs(svg) {
+    $$(".glyph", svg).forEach((t) => {
+      const [x, y, w, h] = t.dataset.rect.split(",").map(Number);
+      t.setAttribute("font-size", "100");
+      const bb = t.getBBox();
+      // getBBox covers the em box; letters' ink is about 72% of it, from the baseline up.
+      const ink = { x: bb.x, y: -72, w: bb.width || 66, h: 72 };
+      t.setAttribute("transform", `translate(${x} ${y}) scale(${w / ink.w} ${h / ink.h}) translate(${-ink.x} ${-ink.y})`);
+    });
+  }
+
+  function initDegenerate() {
+    const panel = $("#tab-degenerate");
+    const form = $("form", panel);
+    const box = $('[data-role="details"]', panel);
+    let result = null; // { data, rows, sort, expanded }
+
+    fillForm(form, { sequence: "", inosine_threshold: 2 });
+    const saved = storageGet(DEGENERATE_KEY);
+    if (saved && typeof saved === "object") fillForm(form, saved);
+    const save = () => storageSet(DEGENERATE_KEY, readForm(form));
+    form.addEventListener("input", save);
+
+    const spread = (s, digits = 1) => (s ? `${fmt(s.min, digits)} / ${fmt(s.avg, digits)} / ${fmt(s.max, digits)}` : "—");
+    const tile = (label, value, note = "") =>
+      `<div class="tile"><span class="label">${label}</span><span class="value">${value}</span>${note ? `<span class="note">${note}</span>` : ""}</div>`;
+    // Show the oligo with the positions that vary across the pool highlighted.
+    const marked = (seq) =>
+      seq.split("").map((c, i) => (result.data.probabilities[i] && Object.keys(result.data.probabilities[i]).length > 1 ? `<span class="wob">${c}</span>` : c)).join("");
+    const inosineHtml = (seq) => escapeHtml(seq).replace(/I+/g, (m) => `<span class="ino">${m}</span>`);
+
+    function variantsHtml() {
+      const { data, rows, sort } = result;
+      if (!data.variants) {
+        return `<p class="msg">The pool has ${formatCount(data.complexity)} oligos, more than the ${data.max_variants.toLocaleString()} that are listed and used for Tm. %GC above is exact.</p>`;
+      }
+      if (!result.expanded) {
+        return `<button type="button" class="btn" data-action="disambiguate">Disambiguate: list all ${data.variants.length.toLocaleString()} oligos</button>`;
+      }
+      const tms = data.variants.map((v) => v.tm);
+      return `<div class="table-actions"><span>${data.variants.length.toLocaleString()} oligos · ${data.length} nt · Tm ${fmt(Math.min(...tms), 1)}–${fmt(Math.max(...tms), 1)} °C</span>
+          <span class="spacer"></span><button type="button" class="btn ghost small" data-action="export-variants">Export table (TSV)</button></div>
+        <div class="table-wrap"><table class="results-table variants">
+          <thead><tr>${VARIANT_COLUMNS.map(([label, , numeric], i) => {
+            const s = sort && sort.col === i ? (sort.dir > 0 ? "ascending" : "descending") : "none";
+            return `<th scope="col" data-col="${i}" aria-sort="${s}">${escapeHtml(label)}</th>`;
+          }).join("")}</tr></thead>
+          <tbody>${rows.map((r) => `<tr><td class="num">${r.index}</td><td class="seq">${marked(r.seq)}</td><td class="num">${fmt(r.tm, 1)}</td><td class="num">${fmt(r.gc, 1)}</td></tr>`).join("")}</tbody>
+        </table></div>`;
+    }
+
+    function render() {
+      const { data } = result;
+      const ino = data.inosine;
+      box.innerHTML = `
+        <div class="detail-head"><h2>Oligo pool</h2><span class="spacer"></span>
+          <span class="muted mono">${escapeHtml(data.sequence)}</span></div>
+        <div class="tiles">
+          ${tile("Pool complexity", formatCount(data.complexity), `${data.length} nt`)}
+          ${tile("Tm min / avg / max (°C)", spread(data.tm), data.tm ? "" : "pool too large")}
+          ${tile("%GC min / avg / max", spread(data.gc))}
+        </div>
+        <div class="logo-wrap">${logoSvg(data.probabilities)}</div>
+        <div class="inosine">
+          <h3>Inosine replacement</h3>
+          <div class="ino-row"><span class="ino-seq">${inosineHtml(ino.sequence)}</span>
+            <button type="button" class="btn ghost small" data-action="copy-inosine">Copy</button></div>
+          <p class="muted">${ino.replaced} position${ino.replaced === 1 ? "" : "s"} replaced · pool complexity ${formatCount(ino.complexity)} · Tm is not calculated for inosine primers</p>
+        </div>
+        <div data-role="variants">${variantsHtml()}</div>`;
+      fitGlyphs($(".logo-svg", box));
+      bindVariants();
+      $('[data-action="copy-inosine"]', box).addEventListener("click", async (event) => {
+        try {
+          await navigator.clipboard.writeText(ino.sequence);
+          event.target.textContent = "Copied";
+        } catch {
+          event.target.textContent = "Copy failed";
+        }
+      });
+    }
+
+    function renderVariants() {
+      $('[data-role="variants"]', box).innerHTML = variantsHtml();
+      bindVariants();
+    }
+
+    function bindVariants() {
+      const root = $('[data-role="variants"]', box);
+      $('[data-action="disambiguate"]', root)?.addEventListener("click", () => {
+        result.expanded = true;
+        renderVariants();
+      });
+      $('[data-action="export-variants"]', root)?.addEventListener("click", () => {
+        const lines = ["oligo\ttm\tgc", ...result.data.variants.map((v) => `${v.seq}\t${v.tm.toFixed(2)}\t${v.gc.toFixed(1)}`)];
+        download(`degenerate_${result.data.sequence}.tsv`, lines.join("\n") + "\n", "text/tab-separated-values");
+      });
+      $$("th", root).forEach((th) =>
+        th.addEventListener("click", () => {
+          const col = Number(th.dataset.col);
+          const key = VARIANT_COLUMNS[col][1];
+          const dir = result.sort && result.sort.col === col ? -result.sort.dir : 1;
+          result.sort = { col, dir };
+          result.rows = [...result.rows].sort((a, b) => (a[key] < b[key] ? -dir : a[key] > b[key] ? dir : 0));
+          renderVariants();
+        }),
+      );
+    }
+
+    async function run(button) {
+      setStatus(panel, "");
+      await busy(button, async () => {
+        try {
+          const values = readForm(form);
+          const body = { sequence: values.sequence, inosine_threshold: values.inosine_threshold ?? 2, conditions: state.prefs.conditions };
+          const data = await api("/degenerate", body);
+          const rows = (data.variants || []).map((v, i) => ({ ...v, index: i + 1 }));
+          result = { data, rows, sort: null, expanded: result?.expanded && result.data.sequence === data.sequence };
+          box.hidden = false;
+          render();
+        } catch (err) {
+          box.hidden = true;
+          setStatus(panel, err.message, "error");
+        }
+      });
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      run(event.submitter);
+    });
+    // A new threshold only changes the inosine primer, so update it in place.
+    field(panel, "inosine_threshold").addEventListener("change", () => {
+      if (result) run(null);
+    });
+  }
+
   // ---------------------------------------------------------- AutoDimer tab
 
   const AUTODIMER_KEY = "pyprimer.autodimer.v1";
@@ -995,6 +1183,7 @@
       if (["pcr", "bisulphite", "qpcr", "sequencing"].includes(panel.dataset.mode)) initDesignPanel(panel);
     });
     initAnalysis();
+    initDegenerate();
     initSequenceBoxes();
     initAutoDimer();
     initEnsembl();

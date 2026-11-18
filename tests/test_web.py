@@ -180,6 +180,36 @@ def test_autodimer_errors(client: FlaskClient, body: dict[str, object], message:
     assert status == 400 and message in data["error"]
 
 
+def test_degenerate(client: FlaskClient) -> None:
+    body = {"sequence": "agagtttgat ymtggctcag", "conditions": {"oligo_nm": 250}}
+    status, data = post(client, "/degenerate", body)
+    assert status == 200
+    assert data["sequence"] == "AGAGTTTGATYMTGGCTCAG" and data["complexity"] == 4
+    assert [v["seq"][10:12] for v in data["variants"]] == ["CA", "CC", "TA", "TC"]
+    assert data["gc"] == {"min": 40, "avg": 45, "max": 50}
+    assert data["tm"]["min"] < data["tm"]["avg"] < data["tm"]["max"]
+    assert data["probabilities"][10] == {"C": 0.5, "T": 0.5}
+    assert data["inosine"] == {"sequence": "AGAGTTTGATIITGGCTCAG", "complexity": 1, "replaced": 2}
+
+    status, data = post(client, "/degenerate", {"sequence": "N" * 10, "inosine_threshold": 4})
+    assert status == 200 and data["tm"] is None and data["variants"] is None
+    assert data["complexity"] == 4**10 and data["inosine"]["sequence"] == "I" * 10
+
+
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        ({"sequence": ""}, "Enter a primer"),
+        ({"sequence": "ACGZ"}, "Not an IUPAC"),
+        ({"sequence": "ACGT", "inosine_threshold": 1}, "at least 2"),
+        ({"sequence": "ACGT", "inosine": 2}, "unknown field"),
+    ],
+)
+def test_degenerate_errors(client: FlaskClient, body: dict[str, object], message: str) -> None:
+    status, data = post(client, "/degenerate", body)
+    assert status == 400 and message in data["error"]
+
+
 def test_enzymes(client: FlaskClient) -> None:
     status, data = post(client, "/enzymes", {"region": "GAATTC"})
     assert status == 200
