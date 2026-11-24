@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=PyPrimer
+Name=POET
 GenericName=Primer design
 Comment=Primer design for PCR, bisulphite PCR, real-time PCR and sequencing
-Exec=pyprimer
-Icon=pyprimer
+Exec=poet-primers
+Icon=poet-primers
 Terminal=false
 Categories=Science;Biology;
 Keywords=PCR;primer;qPCR;bisulphite;oligo;

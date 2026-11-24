@@ -18,8 +18,8 @@ from typing import Any
 
 import pytest
 
-from pyprimer import design as design_module
-from pyprimer.design import (
+from poet_primers import design as design_module
+from poet_primers.design import (
     BisulphiteSettings,
     PCRSettings,
     QPCRSettings,
@@ -30,9 +30,9 @@ from pyprimer.design import (
     design_qpcr,
     design_sequencing,
 )
-from pyprimer.dimer import primer_dimer
-from pyprimer.features import find_cpg_islands, find_orf
-from pyprimer.thermo import thermodynamics
+from poet_primers.dimer import primer_dimer
+from poet_primers.features import find_cpg_islands, find_orf
+from poet_primers.thermo import thermodynamics
 
 from .helpers import cpg_rich, orf_sequence, random_dna
 

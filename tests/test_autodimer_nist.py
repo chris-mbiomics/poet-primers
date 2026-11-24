@@ -15,7 +15,7 @@ from typing import Any
 
 import pytest
 
-from pyprimer.autodimer import (
+from poet_primers.autodimer import (
     AutoDimerSettings,
     Oligo,
     format_value,
@@ -29,13 +29,13 @@ CASES: list[dict[str, Any]] = json.loads(FIXTURE.read_text())["cases"]
 
 #: Behaviour of the NIST service that is deliberately not reproduced.
 DEVIATIONS = {
-    # NIST never pairs lower-case bases; AutoDimer (and pyprimer) read them as upper case.
+    # NIST never pairs lower-case bases; AutoDimer (and poet-primers) read them as upper case.
     "lowercase": "NIST ignores lower-case bases",
     # With R/Y in the 5' part, NIST sizes some hairpin stems past the 3' end.
     "ambiguous_hairpin": "NIST mis-sizes hairpin stems around ambiguity codes",
 }
 
-# NIST draws some oligos with their original U and ambiguity codes; pyprimer
+# NIST draws some oligos with their original U and ambiguity codes; poet-primers
 # shows them as read (U as T, anything else as N).
 _AMBIGUOUS = re.compile(r"[RYKMSWBDHV]")
 

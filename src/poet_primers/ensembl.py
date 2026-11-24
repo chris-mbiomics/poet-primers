@@ -109,7 +109,7 @@ def _parse_gene(data: dict[str, Any]) -> Gene:
 def _get_json(path: str, **params: Any) -> dict[str, Any]:
     url = f"{SERVER}{path}?{urllib.parse.urlencode({**params, 'content-type': 'application/json'})}"
     request = urllib.request.Request(
-        url, headers={"Accept": "application/json", "User-Agent": f"pyprimer/{__version__}"}
+        url, headers={"Accept": "application/json", "User-Agent": f"poet-primers/{__version__}"}
     )
     try:
         with urllib.request.urlopen(request, timeout=TIMEOUT) as response:

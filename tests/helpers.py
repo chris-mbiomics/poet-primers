@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import random
 
-from pyprimer.sequence import GENETIC_CODE
+from poet_primers.sequence import GENETIC_CODE
 
 SENSE_CODONS = sorted(codon for codon, aa in GENETIC_CODE.items() if aa != "*")
 

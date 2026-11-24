@@ -16,11 +16,9 @@ import threading
 from pathlib import Path
 from typing import Any, Literal
 
-from . import __version__
-
 INSTALL_HINT = (
-    "install it with: pip install 'pyprimer[desktop]' "
-    "(or run 'pyprimer serve --open' for the browser interface)"
+    "install it with: pip install 'poet-primers[desktop]' "
+    "(or run 'poet-primers serve --open' for the browser interface)"
 )
 
 
@@ -32,7 +30,7 @@ def _data_dir() -> Path:
         base = Path.home() / "Library" / "Application Support"
     else:
         base = Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local" / "share")
-    return base / "pyprimer" / "webview"
+    return base / "poet-primers" / "webview"
 
 
 def _gui() -> Literal["qt"] | None:
@@ -95,7 +93,7 @@ def run_window(port: int) -> int:
         api = _Api(webview)
         webview.settings["OPEN_EXTERNAL_LINKS_IN_BROWSER"] = True
         api._window = webview.create_window(
-            f"PyPrimer {__version__}",
+            "Primer & Oligo Evaluation Toolkit",
             f"http://127.0.0.1:{server.port}/",
             js_api=api,
             width=1280,

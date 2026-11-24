@@ -12,10 +12,10 @@ import pytest
 from flask import Flask
 from flask.testing import FlaskClient
 
-from pyprimer import ensembl
-from pyprimer.design import PCRSettings, TargetRange
-from pyprimer.web import create_app
-from pyprimer.web.schema import SchemaError, build
+from poet_primers import ensembl
+from poet_primers.design import PCRSettings, TargetRange
+from poet_primers.web import create_app
+from poet_primers.web.schema import SchemaError, build
 
 from .helpers import orf_sequence, random_dna
 
@@ -43,7 +43,7 @@ def post(client: FlaskClient, path: str, body: Any) -> tuple[int, Any]:
 def test_index(client: FlaskClient) -> None:
     response = client.get("/")
     assert response.status_code == 200
-    assert b"PyPrimer" in response.data
+    assert b"POET" in response.data
     assert client.get("/static/app.js").status_code == 200
 
 

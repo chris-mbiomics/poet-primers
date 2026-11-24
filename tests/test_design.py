@@ -7,8 +7,8 @@ import random
 
 import pytest
 
-from pyprimer.cloning import add_cloning_tails, cloning_enzymes, find_enzyme, rebase_enzymes
-from pyprimer.design import (
+from poet_primers.cloning import add_cloning_tails, cloning_enzymes, find_enzyme, rebase_enzymes
+from poet_primers.design import (
     DesignError,
     PCRSettings,
     QPCRSettings,
@@ -23,8 +23,8 @@ from pyprimer.design import (
     design_qpcr,
     design_sequencing,
 )
-from pyprimer.exons import AlignmentError, map_exons
-from pyprimer.features import (
+from poet_primers.exons import AlignmentError, map_exons
+from poet_primers.features import (
     CpGSettings,
     Region,
     find_cpg_islands,
@@ -32,9 +32,9 @@ from pyprimer.features import (
     find_orf,
     highlight_regions,
 )
-from pyprimer.report import MapPrimers, analyse_pair, sequence_map, text_report
-from pyprimer.sequence import reverse_complement
-from pyprimer.thermo import melting_temperature
+from poet_primers.report import MapPrimers, analyse_pair, sequence_map, text_report
+from poet_primers.sequence import reverse_complement
+from poet_primers.thermo import melting_temperature
 
 from .helpers import cpg_rich, orf_sequence, random_dna
 

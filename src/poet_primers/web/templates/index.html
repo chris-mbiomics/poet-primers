@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PyPrimer</title>
+  <title>Primer &amp; Oligo Evaluation Toolkit</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23176b5b'/%3E%3Cpath d='M7 11h18M7 21h18' stroke='%23fff' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M11 11v10M16 11v10M21 11v10' stroke='%23a7e3d4' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -86,8 +86,8 @@
   <div class="brand">
     <span class="logo" aria-hidden="true"></span>
     <div>
-      <h1>PyPrimer</h1>
-      <p>Primer design for PCR, bisulphite PCR, real-time PCR and sequencing</p>
+      <h1>POET</h1>
+      <p>Primer &amp; Oligo Evaluation Toolkit: primer design for PCR, bisulphite PCR, real-time PCR and sequencing</p>
     </div>
   </div>
   <nav class="tabs" role="tablist" aria-label="Design mode">
@@ -465,7 +465,12 @@
 </main>
 
 <footer class="footer">
-  PyPrimer {{ version }} · Python port of PerlPrimer 1.1.21 by Owen Marshall · AutoDimer after Vallone &amp; Butler (NIST) · DegePrime by Hugerth et al. · GNU GPL v2 or later · Restriction enzyme data from REBASE
+  POET {{ version }}
+  · Python port of <a href="https://doi.org/10.1093/bioinformatics/bth254" target="_blank" rel="noopener noreferrer" title="Marshall OJ (2004) PerlPrimer: cross-platform, graphical primer design for standard, bisulphite and real-time PCR. Bioinformatics 20:2471–2472">PerlPrimer 1.1.21 by Owen Marshall</a>
+  · <a href="https://doi.org/10.2144/04372ST03" target="_blank" rel="noopener noreferrer" title="Vallone PM, Butler JM (2004) AutoDimer: a screening tool for primer-dimer and hairpin structures. BioTechniques 37:226–231">AutoDimer after Vallone &amp; Butler (NIST)</a>
+  · <a href="https://doi.org/10.1128/AEM.01403-14" target="_blank" rel="noopener noreferrer" title="Hugerth LW et al. (2014) DegePrime, a program for degenerate primer design for broad-taxonomic-range PCR in microbial ecology studies. Appl Environ Microbiol 80:5116–5123">DegePrime by Hugerth et al.</a>
+  · <a href="https://doi.org/10.1093/nar/gkac975" target="_blank" rel="noopener noreferrer" title="Roberts RJ et al. (2023) REBASE: a database for DNA restriction and modification: enzymes, genes and genomes. Nucleic Acids Res 51:D629–D630">Restriction enzyme data from REBASE</a>
+  · <a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.html" target="_blank" rel="noopener noreferrer">GNU GPL v2 or later</a>
 </footer>
 
 <dialog id="ensembl-dialog" aria-labelledby="ensembl-title">

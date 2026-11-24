@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from pyprimer.degenerate import (
+from poet_primers.degenerate import (
     IUPAC,
     Spread,
     analyse_degenerate,
@@ -14,8 +14,8 @@ from pyprimer.degenerate import (
     gc_spread,
     replace_with_inosine,
 )
-from pyprimer.sequence import gc_percent
-from pyprimer.thermo import Conditions, melting_temperature
+from poet_primers.sequence import gc_percent
+from poet_primers.thermo import Conditions, melting_temperature
 
 PRIMER = "AGAGTTTGATYMTGGCTCAG"  # Y = C/T, M = A/C
 

@@ -1,4 +1,4 @@
-"""Desktop window mode (``pyprimer serve --window``), tested without a GUI."""
+"""Desktop window mode (``poet-primers serve --window``), tested without a GUI."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 
-from pyprimer import cli, desktop
+from poet_primers import cli, desktop
 
 
 @pytest.fixture
@@ -50,7 +50,7 @@ def test_missing_pywebview(
 ) -> None:
     monkeypatch.setitem(sys.modules, "webview", None)
     assert desktop.run_window(0) == 1
-    assert "pyprimer[desktop]" in capsys.readouterr().err
+    assert "poet-primers[desktop]" in capsys.readouterr().err
 
 
 class FakeWindow:
@@ -100,7 +100,7 @@ def test_run_window_lifecycle(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -
 
     assert desktop.run_window(0) == 0
     assert seen["status"] == 200
-    assert seen["title"].startswith("PyPrimer")
+    assert seen["title"] == "Primer & Oligo Evaluation Toolkit"
     assert seen["start"] == {
         "gui": None,
         "private_mode": False,
@@ -125,6 +125,6 @@ def test_arguments_still_reach_cli(capsys: pytest.CaptureFixture[str]) -> None:
 
 @pytest.mark.skipif(sys.platform == "win32", reason="hides the console on Windows")
 def test_console_hiding_is_noop_elsewhere() -> None:
-    from pyprimer._winconsole import hide_if_owned
+    from poet_primers._winconsole import hide_if_owned
 
     assert hide_if_owned() is False

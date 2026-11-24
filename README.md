@@ -1,17 +1,17 @@
-# PyPrimer
+# POET — Primer & Oligo Evaluation Toolkit
 
-Design PCR primers in your browser: standard PCR, bisulphite PCR, real-time
+Design PCR primers on your desktop or in your browser: standard PCR, bisulphite PCR, real-time
 PCR (qPCR) and sequencing, universal degenerate primers from an alignment,
 plus primer-dimer and hairpin screening of whole multiplex sets.
 
 Paste a sequence (or fetch one from Ensembl), say where the amplicon should
-be, and PyPrimer lists primer pairs that meet your Tm, length and GC
+be, and POET lists primer pairs that meet your Tm, length and GC
 constraints, ranked by how little they dimerise. Click a pair to see its
 thermodynamics, dimer alignments and where it sits on the sequence.
 
 ![Standard PCR: a designed primer pair with its thermodynamics and dimer analysis](docs/images/standard-pcr.webp)
 
-PyPrimer is a Python port of [PerlPrimer](http://perlprimer.sourceforge.net/)
+POET started as a Python port of [PerlPrimer](http://perlprimer.sourceforge.net/)
 1.1.21 by Owen Marshall. If you have used PerlPrimer, the design modes,
 settings and results are the same: Tm, ΔH/ΔS, primer-dimers, ORF and CpG
 prediction and all four design modes are tested against the original code
@@ -37,37 +37,37 @@ and give identical output. What changed is listed under
 
 ### Download the app
 
-The easiest way to run PyPrimer is to download the single file for your
-system from the [Releases](https://github.com/chris-mbiomics/pyprimer/releases)
+The easiest way to run POET is to download the single file for your
+system from the [Releases](https://github.com/chris-mbiomics/poet-primers/releases)
 page. You don't need to install Python or anything else.
 
-- **Linux:** `PyPrimer-<version>-x86_64.AppImage`. Make it executable
-  (`chmod +x PyPrimer-*.AppImage`, or tick "Allow executing as program" in
+- **Linux:** `poet-primers-<version>-x86_64.AppImage`. Make it executable
+  (`chmod +x poet-primers-*.AppImage`, or tick "Allow executing as program" in
   its file properties), then double-click it. It runs on Ubuntu 22.04,
   Debian 12, Fedora 36 and other distributions of that age or newer.
-- **Windows:** `PyPrimer-<version>-windows-x64.exe`. Double-click it. On the
+- **Windows:** `poet-primers-<version>-windows-x64.exe`. Double-click it. On the
   first run, SmartScreen may warn about an unrecognised app: choose
   *More info → Run anyway*.
-- **macOS (Apple silicon):** `PyPrimer-<version>-macos-arm64.dmg`. Open it
-  and drag PyPrimer to Applications. The app isn't signed, so the first time,
+- **macOS (Apple silicon):** `poet-primers-<version>-macos-arm64.dmg`. Open it
+  and drag POET to Applications. The app isn't signed, so the first time,
   right-click it and choose *Open*.
 
-Double-clicking opens PyPrimer in its own window. The same file also works as
+Double-clicking opens POET in its own window. The same file also works as
 the [command line](#command-line) tool when you give it a command, for example
-`./PyPrimer-2.0.0-x86_64.AppImage analyse GAGAATGTGGGCTCTCAAGC` or
-`PyPrimer-2.0.0-windows-x64.exe serve --open` to use your browser instead.
+`./poet-primers-2.0.0-x86_64.AppImage analyse GAGAATGTGGGCTCTCAAGC` or
+`poet-primers-2.0.0-windows-x64.exe serve --open` to use your browser instead.
 
 ### Install with Python
 
-You need Python 3.10 or later. Install PyPrimer into a virtual environment
+You need Python 3.10 or later. Install POET into a virtual environment
 and start the web interface:
 
 ```bash
-git clone git@github.com:chris-mbiomics/pyprimer.git
-cd pyprimer
+git clone git@github.com:chris-mbiomics/poet-primers.git
+cd poet-primers
 python3 -m venv .venv
 .venv/bin/pip install -e '.[server]'
-.venv/bin/pyprimer serve --open
+.venv/bin/poet-primers serve --open
 ```
 
 `--open` launches your browser at http://localhost:8000. Stop the server with
@@ -75,13 +75,13 @@ Ctrl+C. Use `--port` to pick another port.
 
 ### As a desktop app
 
-PyPrimer can also run as a standalone application in its own window, with no
+POET can also run as a standalone application in its own window, with no
 browser involved. Install the `desktop` extra and start it with `--window`
 (or with no command at all, which does the same):
 
 ```bash
 .venv/bin/pip install -e '.[server,desktop]'
-.venv/bin/pyprimer serve --window
+.venv/bin/poet-primers serve --window
 ```
 
 The window uses your system's web engine (via
@@ -89,11 +89,11 @@ The window uses your system's web engine (via
 else. On Linux, also install a GUI backend, either Qt
 (`.venv/bin/pip install 'pywebview[qt]'`) or GTK (`pip install 'pywebview[gtk]'`,
 which needs the WebKitGTK system libraries). Closing the window stops
-PyPrimer. Exports open a normal save dialog, NCBI BLAST links open in your
+POET. Exports open a normal save dialog, NCBI BLAST links open in your
 browser, and preferences are kept between sessions (they are separate from
 the ones in your browser).
 
-PyPrimer runs entirely on your own machine. It only goes online when you ask
+POET runs entirely on your own machine. It only goes online when you ask
 it to: fetching a sequence from Ensembl, or opening NCBI BLAST for a primer
 pair. By default it is reachable only from your own computer. To share it on
 a lab network, start it with `--host 0.0.0.0`, but only on a network you
@@ -119,7 +119,7 @@ work the same way:
    length, GC, ΔH/ΔS/ΔG, the predicted 3′-extensible and other stable dimers,
    and a sequence map with the primers, target range and ORF translation.
 
-If no pair fits, PyPrimer can keep trying on its own: under
+If no pair fits, POET can keep trying on its own: under
 *If no pairs are found*, choose to widen the outer range or narrow the inner
 range 10 bp at a time, or to stop.
 
@@ -131,7 +131,7 @@ correspondingly longer.
 ### Standard PCR
 
 Primer pairs flanking your region of interest. Under *Cloning sites* you can
-add a restriction site and a 5′ anchor to each primer. PyPrimer only offers
+add a restriction site and a 5′ anchor to each primer. POET only offers
 six-cutters that do not cut inside the amplicon (from REBASE), and can keep
 the site in frame with a fusion in your vector.
 
@@ -149,7 +149,7 @@ templates amplify alike.
 
 Primers for qPCR on cDNA that avoid amplifying genomic DNA, by making the
 amplicon span an exon–exon junction or by placing a primer across one.
-PyPrimer needs to know where the exon junctions are in your mRNA. Either:
+POET needs to know where the exon junctions are in your mRNA. Either:
 
 - **Ensembl…** fetches the transcript and fills in the junctions for you;
 - type the mRNA positions where each exon after the first begins
@@ -294,16 +294,16 @@ are per browser and per computer. *Restore defaults* resets them.
 Check one or two primers without opening the browser:
 
 ```bash
-.venv/bin/pyprimer analyse GAGAATGTGGGCTCTCAAGC GGCGTTAGTTTAAGTCACGG
+.venv/bin/poet-primers analyse GAGAATGTGGGCTCTCAAGC GGCGTTAGTTTAAGTCACGG
 ```
 
 Screen a file of oligos (FASTA-style `>label` lines) with AutoDimer:
 
 ```bash
-.venv/bin/pyprimer autodimer primers.txt --score 7 --hairpin-score 4
+.venv/bin/poet-primers autodimer primers.txt --score 7 --hairpin-score 4
 ```
 
-Run `pyprimer --help` or `pyprimer <command> --help` for all options.
+Run `poet-primers --help` or `poet-primers <command> --help` for all options.
 
 ## Differences from PerlPrimer
 
@@ -312,7 +312,7 @@ Intentional changes:
 - **Bisulphite reverse primers**: PerlPrimer searched reverse primers for
   `CG` on the reversed (not complemented) top strand. That finds GpC sites,
   not CpG sites, so CpG exclusion and the degenerate `R` bases were applied
-  to the wrong positions. PyPrimer checks the real CpG sites. The parity test
+  to the wrong positions. POET checks the real CpG sites. The parity test
   disables this fix to confirm everything else matches.
 - **CpG islands** that run to the end of the sequence are now reported
   (PerlPrimer silently dropped them).
@@ -324,7 +324,7 @@ Intentional changes:
   longer.
 - **Sequencing** uses its own *Exclude %GC* and *GC clamp* options.
   PerlPrimer showed these checkboxes but applied the Standard PCR settings.
-- **Exon mapping**: NCBI Spidey is no longer distributed. PyPrimer aligns the
+- **Exon mapping**: NCBI Spidey is no longer distributed. POET aligns the
   mRNA to the genomic sequence itself (exact-match exons, junctions placed
   at GT…AG where the sequence is ambiguous), or takes exon structure from
   Ensembl.
@@ -372,7 +372,7 @@ Deliberate differences from the NIST service:
   thresholds. NIST runs them separately with one threshold.
 
 - If the longer oligo is at least 2n + 3 bases (n = shorter length), NIST
-  reports an error. PyPrimer caps the extra shifts instead.
+  reports an error. POET caps the extra shifts instead.
 - Lower-case bases are read as upper case. NIST never pairs them. U is read as T.
 - **Hairpin Tm and ΔG** follow the paper: stem duplex plus a 5.6 kcal/mol
   (entropic) loop penalty, Tm = ΔH/ΔS. The values NIST reports for hairpins
@@ -422,11 +422,11 @@ Differences:
 
 ## For developers
 
-### Using PyPrimer as a Python library
+### Using POET as a Python library
 
 ```python
-from pyprimer.design import design_pcr, Search
-from pyprimer.thermo import Conditions, melting_temperature
+from poet_primers.design import design_pcr, Search
+from poet_primers.thermo import Conditions, melting_temperature
 
 melting_temperature("ACGTACGTAGCTAGCTAGGA", Conditions(mg_mm=2.0))
 
@@ -438,7 +438,7 @@ for pair in result.pairs[:5]:
 ### Project layout
 
 ```
-src/pyprimer/
+src/poet_primers/
   sequence.py    parsing, complementation, composition, genetic code
   thermo.py      nearest-neighbour tables, Tm, dG, reaction conditions
   dimer.py       primer-dimer prediction and diagrams
@@ -479,10 +479,10 @@ Each one has to be built on its own operating system:
 .venv/bin/python packaging/build.py
 ```
 
-This writes `dist/PyPrimer-<version>-x86_64.AppImage` on Linux (the AppImage
+This writes `dist/poet-primers-<version>-x86_64.AppImage` on Linux (the AppImage
 bundles Qt WebEngine, and appimagetool is downloaded on first use),
-`dist/PyPrimer-<version>-windows-x64.exe` on Windows and
-`dist/PyPrimer-<version>-macos-<arch>.dmg` on macOS. The *Build binaries*
+`dist/poet-primers-<version>-windows-x64.exe` on Windows and
+`dist/poet-primers-<version>-macos-<arch>.dmg` on macOS. The *Build binaries*
 GitHub Actions workflow builds all three on demand. Pushing a `v*` tag also
 attaches them to a GitHub Release. To redraw the icons, run
 `python tools/make_icons.py` (needs Pillow).
@@ -516,7 +516,7 @@ them again (this sends only the script's synthetic test sequences to NIST):
 
 ## Licence and credits
 
-PyPrimer is free software under the GNU General Public License, version 2
+POET is free software under the GNU General Public License, version 2
 or (at your option) any later version. See [LICENSE](LICENSE).
 
 - Original PerlPrimer © 2003-2011 Owen Marshall.
@@ -526,7 +526,14 @@ or (at your option) any later version. See [LICENSE](LICENSE).
 - DegePrime © 2008-2013 Anders Andersson.
 - Marshall OJ. PerlPrimer: cross-platform, graphical primer design for
   standard, bisulphite and real-time PCR. *Bioinformatics* 2004
-  20(15):2471-2472.
+  20(15):2471-2472. [doi:10.1093/bioinformatics/bth254](https://doi.org/10.1093/bioinformatics/bth254)
+- Vallone PM, Butler JM. AutoDimer: a screening tool for primer-dimer and
+  hairpin structures. *BioTechniques* 2004 37(2):226-231.
+  [doi:10.2144/04372ST03](https://doi.org/10.2144/04372ST03)
 - Hugerth LW, Wefer HA, Lundin S, et al. DegePrime, a program for degenerate
   primer design for broad-taxonomic-range PCR in microbial ecology studies.
   *Appl Environ Microbiol* 2014 80(16):5116-5123.
+  [doi:10.1128/AEM.01403-14](https://doi.org/10.1128/AEM.01403-14)
+- Roberts RJ, Vincze T, Posfai J, Macelis D. REBASE: a database for DNA
+  restriction and modification: enzymes, genes and genomes. *Nucleic Acids
+  Res* 2023 51(D1):D629-D630. [doi:10.1093/nar/gkac975](https://doi.org/10.1093/nar/gkac975)

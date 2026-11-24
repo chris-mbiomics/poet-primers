@@ -47,7 +47,7 @@ def parse_rebase(text: str) -> list[Enzyme]:
 @cache
 def rebase_enzymes() -> tuple[Enzyme, ...]:
     """Enzymes from the bundled REBASE database (version 603)."""
-    data = resources.files("pyprimer").joinpath("data/gcg.603").read_text(encoding="latin-1")
+    data = resources.files("poet_primers").joinpath("data/gcg.603").read_text(encoding="latin-1")
     return tuple(parse_rebase(data))
 
 

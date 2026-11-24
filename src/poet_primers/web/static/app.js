@@ -1,10 +1,10 @@
-/* PyPrimer web interface. */
+/* POET web interface. */
 (() => {
   "use strict";
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
-  const PREFS_KEY = "pyprimer.prefs.v1";
+  const PREFS_KEY = "poet.prefs.v1";
   const MAP_WIDTH = 80;
 
   const state = {
@@ -131,7 +131,7 @@
   }
 
   function download(filename, text, type = "text/plain") {
-    // Desktop window (pyprimer serve --window): use a native save dialog.
+    // Desktop window (poet-primers serve --window): use a native save dialog.
     if (window.pywebview?.api?.save_file) {
       window.pywebview.api.save_file(filename, text);
       return;
@@ -199,10 +199,10 @@
     const show = (name) => {
       tabs.forEach((t) => t.setAttribute("aria-selected", String(t.dataset.tab === name)));
       $$(".panel").forEach((p) => (p.hidden = p.id !== `tab-${name}`));
-      storageSet("pyprimer.tab", name);
+      storageSet("poet.tab", name);
     };
     tabs.forEach((t) => t.addEventListener("click", () => show(t.dataset.tab)));
-    const saved = storageGet("pyprimer.tab");
+    const saved = storageGet("poet.tab");
     if (saved && $(`#tab-${saved}`)) show(saved);
   }
 
@@ -719,7 +719,7 @@
 
   // ---------------------------------------------------- degenerate primers
 
-  const DEGENERATE_KEY = "pyprimer.degenerate.v1";
+  const DEGENERATE_KEY = "poet.degenerate.v1";
   const LOGO_BASES = "ACGT";
   const VARIANT_COLUMNS = [
     // label, key, numeric
@@ -907,7 +907,7 @@
 
   // ------------------------------------------------- universal primers tab
 
-  const UNIVERSAL_KEY = "pyprimer.universal.v1";
+  const UNIVERSAL_KEY = "poet.universal.v1";
   const UNIVERSAL_SAVE_LIMIT = 200000; // characters of alignment kept in localStorage
   const UNIVERSAL_COLUMNS = [
     // label, key, kind, title
@@ -1249,7 +1249,7 @@
 
   // ---------------------------------------------------------- AutoDimer tab
 
-  const AUTODIMER_KEY = "pyprimer.autodimer.v1";
+  const AUTODIMER_KEY = "poet.autodimer.v1";
   const AUTODIMER_COLUMNS = [
     // label, key, numeric
     ["Oligos", "labels", false],

@@ -49,9 +49,9 @@ def draw_mark() -> Image.Image:
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     mark = draw_mark()
-    mark.resize((512, 512), Image.Resampling.LANCZOS).save(OUT / "pyprimer.png")
-    mark.save(OUT / "pyprimer.ico", sizes=[(s, s) for s in (16, 24, 32, 48, 64, 128, 256)])
-    mark.save(OUT / "pyprimer.icns")
+    mark.resize((512, 512), Image.Resampling.LANCZOS).save(OUT / "poet-primers.png")
+    mark.save(OUT / "poet-primers.ico", sizes=[(s, s) for s in (16, 24, 32, 48, 64, 128, 256)])
+    mark.save(OUT / "poet-primers.icns")
     for path in sorted(OUT.iterdir()):
         print(path.relative_to(OUT.parent.parent), path.stat().st_size, "bytes")
 

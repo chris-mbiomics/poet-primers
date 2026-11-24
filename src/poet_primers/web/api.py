@@ -458,7 +458,7 @@ def report() -> Response:
     cloned = payload["cloned"] or {}
     degenerate = payload["degenerate"] or {}
     text = text_report(
-        req.title or "PyPrimer",
+        req.title or "POET",
         analysis,
         seq_map,
         forward_label=cloned.get("forward") or degenerate.get("forward"),

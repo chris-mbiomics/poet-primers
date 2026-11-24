@@ -1,5 +1,5 @@
-"""Command-line entry point: ``pyprimer serve`` (browser or desktop window), quick primer
-analysis and AutoDimer. Without a command, PyPrimer opens in its desktop window."""
+"""Command-line entry point: ``poet-primers serve`` (browser or desktop window), quick primer
+analysis and AutoDimer. Without a command, POET opens in its desktop window."""
 
 from __future__ import annotations
 
@@ -20,16 +20,16 @@ WINDOW_PORT = 8765
 def main(argv: Sequence[str] | None = None) -> int:
     # Finder passes -psn_* on some macOS versions when an app is double-clicked.
     arguments = [a for a in (sys.argv[1:] if argv is None else argv) if not a.startswith("-psn_")]
-    if not arguments:  # double-click / bare `pyprimer`: open the desktop window
+    if not arguments:  # double-click / bare `poet-primers`: open the desktop window
         from ._winconsole import hide_if_owned
 
         hide_if_owned()
         arguments = ["serve", "--window"]
 
     parser = argparse.ArgumentParser(
-        prog="pyprimer",
+        prog="poet-primers",
         description="Primer design for PCR, bisulphite PCR, real-time PCR and sequencing. "
-        "Run without a command to open PyPrimer in its own desktop window.",
+        "Run without a command to open POET in its own desktop window.",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -50,7 +50,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--window",
         action="store_true",
         help="run as a standalone app in its own desktop window instead of a browser "
-        "(needs pyprimer[desktop])",
+        "(needs poet-primers[desktop])",
     )
 
     tm = commands.add_parser("analyse", help="print Tm and primer-dimers for one or two primers")
@@ -112,7 +112,7 @@ def _serve(host: str, port: int, open_browser: bool, debug: bool) -> int:
 
     app = create_app()
     url = f"http://{'localhost' if host in ('127.0.0.1', '0.0.0.0') else host}:{port}/"
-    print(f"PyPrimer {__version__} running at {url} (press Ctrl+C to stop)")
+    print(f"POET {__version__} running at {url} (press Ctrl+C to stop)")
     if open_browser:
         webbrowser.open(url)
     if debug:

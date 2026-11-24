@@ -10,9 +10,9 @@ from pathlib import Path
 
 import pytest
 
-from pyprimer import universal
-from pyprimer.degenerate import IUPAC
-from pyprimer.universal import (
+from poet_primers import universal
+from poet_primers.degenerate import IUPAC
+from poet_primers.universal import (
     UNASSIGNED,
     AlignedSeq,
     DegePrimeSettings,

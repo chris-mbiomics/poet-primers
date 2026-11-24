@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from pyprimer.dimer import primer_dimer
-from pyprimer.sequence import (
+from poet_primers.dimer import primer_dimer
+from poet_primers.sequence import (
     bisulphite_convert,
     c_percent,
     clean_sequence,
@@ -16,7 +16,7 @@ from pyprimer.sequence import (
     reverse_complement,
     translate,
 )
-from pyprimer.thermo import Conditions, free_energy_table, melting_temperature, thermodynamics
+from poet_primers.thermo import Conditions, free_energy_table, melting_temperature, thermodynamics
 
 
 class TestSequence:

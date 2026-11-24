@@ -1,4 +1,4 @@
-"""Flask web interface for PyPrimer."""
+"""Flask web interface for POET."""
 
 from __future__ import annotations
 

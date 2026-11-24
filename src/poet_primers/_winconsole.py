@@ -1,9 +1,9 @@
 """Hide the console window of the frozen Windows executable when it was double-clicked.
 
-The bundled ``PyPrimer.exe`` is a console program so that the command line keeps
+The bundled ``poet-primers.exe`` is a console program so that the command line keeps
 working (stdout/stderr, the shell waiting for it). When it is started from Explorer,
 Windows creates a new console that only this process is attached to; in that case
-the console is hidden and only the PyPrimer window remains. Started from cmd or
+the console is hidden and only the POET window remains. Started from cmd or
 PowerShell, the console is shared with the shell and left alone.
 """
 

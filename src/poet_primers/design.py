@@ -688,7 +688,7 @@ def design_qpcr(
     Args:
         mrna: The spliced transcript sequence.
         exon_boundaries: Positions in ``mrna`` where each exon after the
-            first begins (see :mod:`pyprimer.exons`).
+            first begins (see :mod:`poet_primers.exons`).
     """
     settings = settings or QPCRSettings()
     seq = _prepare(mrna)

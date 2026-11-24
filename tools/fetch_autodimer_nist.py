@@ -1,7 +1,7 @@
 """Record reference AutoDimer results from the NIST DNA Analysis web service.
 
 The original AutoDimer (Vallone & Butler 2004) is only distributed as a
-compiled Visual Basic program, so ``pyprimer.autodimer`` was reconstructed
+compiled Visual Basic program, so ``poet_primers.autodimer`` was reconstructed
 from the paper and calibrated against the web version NIST hosts at
 https://dnaanalysis.nist.gov/DNAAnalysis/primer-tools. This script sends a
 fixed set of synthetic sequences (seeded RNG, nothing user-specific) to that
@@ -139,7 +139,7 @@ def fetch(case: dict[str, Any]) -> Any:
     request = urllib.request.Request(
         URL,
         json.dumps(body).encode(),
-        {"Content-Type": "application/json", "User-Agent": "pyprimer-test-fixtures"},
+        {"Content-Type": "application/json", "User-Agent": "poet-primers-test-fixtures"},
     )
     try:
         with urllib.request.urlopen(request, timeout=120) as response:

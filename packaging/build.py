@@ -1,11 +1,11 @@
-"""Build the standalone PyPrimer binary for the current OS.
+"""Build the standalone POET binary for the current OS.
 
     pip install '.[server,desktop,bundle]'
     python packaging/build.py
 
-Linux   -> dist/PyPrimer-<version>-x86_64.AppImage
-Windows -> dist/PyPrimer-<version>-windows-x64.exe
-macOS   -> dist/PyPrimer-<version>-macos-<arch>.dmg
+Linux   -> dist/poet-primers-<version>-x86_64.AppImage
+Windows -> dist/poet-primers-<version>-windows-x64.exe
+macOS   -> dist/poet-primers-<version>-macos-<arch>.dmg
 
 Prints the path of the finished file on the last line.
 """
@@ -41,7 +41,7 @@ def run(*command: str | Path, **kwargs: object) -> None:
 
 
 def version() -> str:
-    from pyprimer import __version__
+    from poet_primers import __version__
 
     return __version__
 
@@ -57,7 +57,7 @@ def pyinstaller() -> None:
         DIST / "pyinstaller",
         "--workpath",
         BUILD / "pyinstaller",
-        PACKAGING / "pyprimer.spec",
+        PACKAGING / "poet-primers.spec",
     )
 
 
@@ -80,20 +80,20 @@ def appimagetool() -> Path:
 
 
 def build_linux() -> Path:
-    appdir = BUILD / "PyPrimer.AppDir"
+    appdir = BUILD / "POET.AppDir"
     shutil.rmtree(appdir, ignore_errors=True)
-    shutil.copytree(DIST / "pyinstaller" / "pyprimer", appdir / "usr" / "bin")
+    shutil.copytree(DIST / "pyinstaller" / "poet-primers", appdir / "usr" / "bin")
     shutil.copy2(PACKAGING / "linux" / "AppRun", appdir / "AppRun")
     (appdir / "AppRun").chmod(0o755)
-    shutil.copy2(PACKAGING / "linux" / "pyprimer.desktop", appdir / "pyprimer.desktop")
-    shutil.copy2(PACKAGING / "icons" / "pyprimer.png", appdir / "pyprimer.png")
+    shutil.copy2(PACKAGING / "linux" / "poet-primers.desktop", appdir / "poet-primers.desktop")
+    shutil.copy2(PACKAGING / "icons" / "poet-primers.png", appdir / "poet-primers.png")
     icons = appdir / "usr" / "share" / "icons" / "hicolor" / "512x512" / "apps"
     icons.mkdir(parents=True)
-    shutil.copy2(PACKAGING / "icons" / "pyprimer.png", icons / "pyprimer.png")
-    (appdir / ".DirIcon").symlink_to("pyprimer.png")
+    shutil.copy2(PACKAGING / "icons" / "poet-primers.png", icons / "poet-primers.png")
+    (appdir / ".DirIcon").symlink_to("poet-primers.png")
 
     machine = platform.machine()
-    target = DIST / f"PyPrimer-{version()}-{machine}.AppImage"
+    target = DIST / f"poet-primers-{version()}-{machine}.AppImage"
     target.unlink(missing_ok=True)
     # Extract-and-run lets appimagetool work without FUSE (e.g. in CI containers).
     env = {**os.environ, "ARCH": machine, "APPIMAGE_EXTRACT_AND_RUN": "1"}
@@ -102,23 +102,23 @@ def build_linux() -> Path:
 
 
 def build_windows() -> Path:
-    target = DIST / f"PyPrimer-{version()}-windows-x64.exe"
+    target = DIST / f"poet-primers-{version()}-windows-x64.exe"
     target.unlink(missing_ok=True)
-    shutil.move(DIST / "pyinstaller" / "PyPrimer.exe", target)
+    shutil.move(DIST / "pyinstaller" / "poet-primers.exe", target)
     return target
 
 
 def build_macos() -> Path:
     arch = platform.machine()
-    target = DIST / f"PyPrimer-{version()}-macos-{arch}.dmg"
+    target = DIST / f"poet-primers-{version()}-macos-{arch}.dmg"
     target.unlink(missing_ok=True)
     run(
         "hdiutil",
         "create",
         "-volname",
-        "PyPrimer",
+        "POET",
         "-srcfolder",
-        DIST / "pyinstaller" / "PyPrimer.app",
+        DIST / "pyinstaller" / "POET.app",
         "-format",
         "UDZO",
         "-ov",

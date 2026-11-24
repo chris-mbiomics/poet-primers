@@ -1,25 +1,25 @@
-# PyInstaller spec for the standalone PyPrimer binaries. Run via packaging/build.py.
+# PyInstaller spec for the standalone POET binaries. Run via packaging/build.py.
 #
 #   Linux:   onedir build, turned into an AppImage by build.py (Qt WebEngine bundled)
-#   Windows: single-file PyPrimer.exe (system WebView2 via pythonnet)
-#   macOS:   PyPrimer.app bundle (system WKWebView), wrapped in a .dmg by build.py
+#   Windows: single-file poet-primers.exe (system WebView2 via pythonnet)
+#   macOS:   POET.app bundle (system WKWebView), wrapped in a .dmg by build.py
 #
 # All three are console programs, so the full command line keeps working; started
-# without arguments they open the desktop window (see pyprimer.cli.main).
+# without arguments they open the desktop window (see poet_primers.cli.main).
 # ruff: noqa
 import sys
 from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_data_files
 
-from pyprimer import __version__
+from poet_primers import __version__
 
 HERE = Path(SPECPATH)  # noqa: F821 (provided by PyInstaller)
 ICONS = HERE / "icons"
 IS_WIN = sys.platform == "win32"
 IS_MAC = sys.platform == "darwin"
 
-datas = collect_data_files("pyprimer")  # templates, static assets, REBASE data
+datas = collect_data_files("poet_primers")  # templates, static assets, REBASE data
 # pywebview's injected JS is needed everywhere; its .NET DLLs only on Windows.
 datas += collect_data_files("webview", excludes=[] if IS_WIN else ["lib"])
 
@@ -94,7 +94,7 @@ pyz = PYZ(a.pure)  # noqa: F821
 # UTF-8 mode: reports print Unicode (°, Δ) regardless of the console/locale code page.
 options = [("X utf8_mode=1", None, "OPTION")]
 
-icon = str(ICONS / ("pyprimer.ico" if IS_WIN else "pyprimer.icns" if IS_MAC else "pyprimer.png"))
+icon = str(ICONS / ("poet-primers.ico" if IS_WIN else "poet-primers.icns" if IS_MAC else "poet-primers.png"))
 
 if IS_WIN:
     exe = EXE(  # noqa: F821
@@ -103,7 +103,7 @@ if IS_WIN:
         options,
         a.binaries,
         a.datas,
-        name="PyPrimer",
+        name="poet-primers",
         icon=icon,
         console=True,
         upx=False,
@@ -114,22 +114,22 @@ else:
         a.scripts,
         options,
         exclude_binaries=True,
-        name="pyprimer",
+        name="poet-primers",
         icon=icon,
         console=True,
         upx=False,
     )
-    coll = COLLECT(exe, a.binaries, a.datas, name="pyprimer", upx=False)  # noqa: F821
+    coll = COLLECT(exe, a.binaries, a.datas, name="poet-primers", upx=False)  # noqa: F821
     if IS_MAC:
         app = BUNDLE(  # noqa: F821
             coll,
-            name="PyPrimer.app",
+            name="POET.app",
             icon=icon,
-            bundle_identifier="com.mbiomics.pyprimer",
+            bundle_identifier="org.poet-primers.poet",
             version=__version__,
             info_plist={
-                "CFBundleName": "PyPrimer",
-                "CFBundleDisplayName": "PyPrimer",
+                "CFBundleName": "POET",
+                "CFBundleDisplayName": "POET",
                 "CFBundleShortVersionString": __version__,
                 "NSHighResolutionCapable": True,
             },
