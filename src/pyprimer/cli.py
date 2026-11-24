@@ -1,4 +1,5 @@
-"""Command-line entry point: ``pyprimer serve``, quick primer analysis and AutoDimer."""
+"""Command-line entry point: ``pyprimer serve`` (browser or desktop window), quick primer
+analysis and AutoDimer."""
 
 from __future__ import annotations
 
@@ -10,6 +11,10 @@ from collections.abc import Sequence
 from . import __version__
 from .autodimer import AutoDimerSettings, full_report, parse_oligos, screen_dimers, screen_hairpins
 from .report import analyse_pair
+
+SERVE_PORT = 8000
+# Fixed so the window's localStorage origin (and thus saved preferences) is stable.
+WINDOW_PORT = 8765
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -24,9 +29,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     serve.add_argument(
         "--host", default="127.0.0.1", help="interface to bind (default: %(default)s)"
     )
-    serve.add_argument("--port", type=int, default=8000, help="port (default: %(default)s)")
+    serve.add_argument(
+        "--port",
+        type=int,
+        default=None,
+        help=f"port (default: {SERVE_PORT}, or {WINDOW_PORT} with --window)",
+    )
     serve.add_argument("--open", action="store_true", help="open the interface in a browser")
     serve.add_argument("--debug", action="store_true", help="run Flask's debug server")
+    serve.add_argument(
+        "--window",
+        action="store_true",
+        help="run as a standalone app in its own desktop window instead of a browser "
+        "(needs pyprimer[desktop])",
+    )
 
     tm = commands.add_parser("analyse", help="print Tm and primer-dimers for one or two primers")
     tm.add_argument("forward")
@@ -67,7 +83,16 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
     if args.command == "serve":
-        return _serve(args.host, args.port, args.open, args.debug)
+        if args.window:
+            if args.debug or args.open:
+                serve.error("--window cannot be combined with --debug or --open")
+            if args.host not in ("127.0.0.1", "localhost"):
+                serve.error("--window always serves on 127.0.0.1; drop --host")
+            from .desktop import run_window
+
+            return run_window(WINDOW_PORT if args.port is None else args.port)
+        port = SERVE_PORT if args.port is None else args.port
+        return _serve(args.host, port, args.open, args.debug)
     if args.command == "autodimer":
         return _autodimer(args)
     return _analyse(args.forward, args.reverse)

@@ -131,6 +131,11 @@
   }
 
   function download(filename, text, type = "text/plain") {
+    // Desktop window (pyprimer serve --window): use a native save dialog.
+    if (window.pywebview?.api?.save_file) {
+      window.pywebview.api.save_file(filename, text);
+      return;
+    }
     const url = URL.createObjectURL(new Blob([text], { type }));
     const a = Object.assign(document.createElement("a"), { href: url, download: filename });
     document.body.append(a);

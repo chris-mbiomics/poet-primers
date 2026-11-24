@@ -49,6 +49,25 @@ python3 -m venv .venv
 `--open` launches your browser at http://localhost:8000. Stop the server with
 Ctrl+C. Use `--port` to pick another port.
 
+### As a desktop app
+
+PyPrimer can also run as a standalone application in its own window, with no
+browser involved. Install the `desktop` extra and start it with `--window`:
+
+```bash
+.venv/bin/pip install -e '.[server,desktop]'
+.venv/bin/pyprimer serve --window
+```
+
+The window uses your system's web engine (via
+[pywebview](https://pywebview.flowrl.com/)). Windows and macOS need nothing
+else. On Linux, also install a GUI backend, either Qt
+(`.venv/bin/pip install 'pywebview[qt]'`) or GTK (`pip install 'pywebview[gtk]'`,
+which needs the WebKitGTK system libraries). Closing the window stops
+PyPrimer. Exports open a normal save dialog, NCBI BLAST links open in your
+browser, and preferences are kept between sessions (they are separate from
+the ones in your browser).
+
 PyPrimer runs entirely on your own machine. It only goes online when you ask
 it to: fetching a sequence from Ensembl, or opening NCBI BLAST for a primer
 pair. By default it is reachable only from your own computer. To share it on
@@ -408,6 +427,7 @@ src/pyprimer/
   degenerate.py  degenerate (IUPAC) primer pools, sequence logo data, inosine
   universal.py   DegePrime port: alignment trimming, universal degenerate primers
   cli.py         command-line entry point
+  desktop.py     standalone desktop window (pywebview) for `serve --window`
   web/           Flask app factory, JSON API, template and static assets
   data/gcg.603   REBASE restriction enzyme database
 tests/           unit, API, PerlPrimer, DegePrime and NIST AutoDimer parity tests

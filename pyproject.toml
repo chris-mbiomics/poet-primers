@@ -21,6 +21,7 @@ dependencies = ["flask>=3.0"]
 
 [project.optional-dependencies]
 server = ["waitress>=3.0"]
+desktop = ["pywebview>=5.0"]
 dev = ["pytest>=8", "ruff>=0.5", "mypy>=1.10"]
 
 [project.scripts]
@@ -49,5 +50,5 @@ strict = true
 files = ["src/pyprimer"]
 
 [[tool.mypy.overrides]]
-module = ["waitress"]
+module = ["waitress", "webview"]
 ignore_missing_imports = true

@@ -12,6 +12,7 @@ All tooling runs from the project virtualenv (`.venv`, Python 3.12; package inst
 
 ```bash
 .venv/bin/pyprimer serve --port 8000          # web UI (binds 127.0.0.1 unless --host given; --debug for Flask reloader)
+.venv/bin/pyprimer serve --window             # standalone desktop window (needs '.[desktop]' + a pywebview GUI backend)
 .venv/bin/pyprimer analyse FWD [REV]          # Tm + dimer report on the command line
 .venv/bin/ruff check . && .venv/bin/ruff format --check .
 .venv/bin/mypy                                 # strict mode, checks src/pyprimer
@@ -30,6 +31,7 @@ Library modules under `src/pyprimer/` are pure functions over frozen dataclasses
 - `autodimer.py` is a port of NIST AutoDimer (multiplex primer-dimer/hairpin screening). It is independent of `thermo.py`/`Conditions`, because it has its own SantaLucia table and Na⁺-only salt correction. It is calibrated against the NIST web service: `tests/test_autodimer_nist.py` replays `tests/data/autodimer_nist.json` (regenerate with `tools/fetch_autodimer_nist.py`) and requires exact equality, so it calls `screen_dimers(..., self_dimers=False)` (NIST skips self-dimers). Kept NIST quirks and deliberate deviations are listed in README.md ("AutoDimer details").
 - `report.py` builds primer analysis, dimer text and the aligned sequence-map lines (`map_lines`) used both by the text report and by the browser's map renderer.
 - `web/api.py`: every endpoint parses its body with `web/schema.build(RequestDataclass, json)`, which validates types strictly against the dataclass type hints and rejects unknown fields; responses use `schema.dump`. Error types map to status codes via blueprint error handlers (`SchemaError`/`DesignError`/`AlignmentError` → 400, `EnsemblError` → 502).
+- `desktop.py` (`serve --window`) runs the same Flask app on 127.0.0.1 in a werkzeug thread and shows it in a pywebview window; localStorage is persisted to a per-user data dir, so the window uses a fixed port (8765) to keep its origin stable. Its `js_api` exposes `save_file`, which `app.js`'s `download()` uses when `window.pywebview` exists.
 - Front end (`web/templates/index.html`, `web/static/app.js`) is plain Jinja + vanilla JS, no build step. Form inputs declare `data-path="settings.min_tm"` etc.; `readForm` turns them into the nested JSON the API dataclasses expect. Global preferences (conditions, GC/repeat filters, CpG settings) live in localStorage and are merged into each request client-side.
 
 ## Faithfulness to PerlPrimer
