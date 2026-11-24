@@ -110,3 +110,21 @@ def test_run_window_lifecycle(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -
     assert (tmp_path / "store").is_dir()
     with pytest.raises(OSError):
         urllib.request.urlopen(seen["url"], timeout=1)
+
+
+@pytest.mark.parametrize("argv", [[], ["-psn_0_12345"]], ids=["no-args", "macos-psn"])
+def test_no_arguments_opens_window(calls: list[int], argv: list[str]) -> None:
+    assert cli.main(argv) == 0
+    assert calls == [cli.WINDOW_PORT]
+
+
+def test_arguments_still_reach_cli(capsys: pytest.CaptureFixture[str]) -> None:
+    assert cli.main(["analyse", "GAGAATGTGGGCTCTCAAGC"]) == 0
+    assert "Forward: GAGAATGTGGGCTCTCAAGC" in capsys.readouterr().out
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="hides the console on Windows")
+def test_console_hiding_is_noop_elsewhere() -> None:
+    from pyprimer._winconsole import hide_if_owned
+
+    assert hide_if_owned() is False

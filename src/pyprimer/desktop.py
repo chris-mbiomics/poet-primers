@@ -18,7 +18,10 @@ from typing import Any, Literal
 
 from . import __version__
 
-INSTALL_HINT = "install it with: pip install 'pyprimer[desktop]'"
+INSTALL_HINT = (
+    "install it with: pip install 'pyprimer[desktop]' "
+    "(or run 'pyprimer serve --open' for the browser interface)"
+)
 
 
 def _data_dir() -> Path:

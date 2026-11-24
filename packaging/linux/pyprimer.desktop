@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=PyPrimer
+GenericName=Primer design
+Comment=Primer design for PCR, bisulphite PCR, real-time PCR and sequencing
+Exec=pyprimer
+Icon=pyprimer
+Terminal=false
+Categories=Science;Biology;
+Keywords=PCR;primer;qPCR;bisulphite;oligo;

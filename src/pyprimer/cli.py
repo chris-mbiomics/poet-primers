@@ -1,5 +1,5 @@
 """Command-line entry point: ``pyprimer serve`` (browser or desktop window), quick primer
-analysis and AutoDimer."""
+analysis and AutoDimer. Without a command, PyPrimer opens in its desktop window."""
 
 from __future__ import annotations
 
@@ -18,9 +18,18 @@ WINDOW_PORT = 8765
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    # Finder passes -psn_* on some macOS versions when an app is double-clicked.
+    arguments = [a for a in (sys.argv[1:] if argv is None else argv) if not a.startswith("-psn_")]
+    if not arguments:  # double-click / bare `pyprimer`: open the desktop window
+        from ._winconsole import hide_if_owned
+
+        hide_if_owned()
+        arguments = ["serve", "--window"]
+
     parser = argparse.ArgumentParser(
         prog="pyprimer",
-        description="Primer design for PCR, bisulphite PCR, real-time PCR and sequencing.",
+        description="Primer design for PCR, bisulphite PCR, real-time PCR and sequencing. "
+        "Run without a command to open PyPrimer in its own desktop window.",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -81,7 +90,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="temperature for dG in C (default: %(default)s)",
     )
 
-    args = parser.parse_args(argv)
+    args = parser.parse_args(arguments)
     if args.command == "serve":
         if args.window:
             if args.debug or args.open:

@@ -1,0 +1,13 @@
+#!/bin/sh
+# AppImage entry point: forwards all arguments to the frozen pyprimer command line,
+# so double-clicking opens the desktop window and terminal use keeps every option.
+HERE="$(dirname "$(readlink -f "$0")")"
+
+# Chromium's user-namespace sandbox is blocked inside AppImages on many distros
+# (e.g. Ubuntu >= 23.10 via AppArmor). The window only shows PyPrimer's own
+# localhost page and external links open in the system browser, so run without it.
+if [ -z "${QTWEBENGINE_CHROMIUM_FLAGS+x}" ]; then
+    export QTWEBENGINE_CHROMIUM_FLAGS="--no-sandbox"
+fi
+
+exec "$HERE/usr/bin/pyprimer" "$@"

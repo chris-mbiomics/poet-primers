@@ -35,6 +35,30 @@ and give identical output. What changed is listed under
 
 ## Getting started
 
+### Download the app
+
+The easiest way to run PyPrimer is to download the single file for your
+system from the [Releases](https://github.com/chris-mbiomics/pyprimer/releases)
+page. You don't need to install Python or anything else.
+
+- **Linux:** `PyPrimer-<version>-x86_64.AppImage`. Make it executable
+  (`chmod +x PyPrimer-*.AppImage`, or tick "Allow executing as program" in
+  its file properties), then double-click it. It runs on Ubuntu 22.04,
+  Debian 12, Fedora 36 and other distributions of that age or newer.
+- **Windows:** `PyPrimer-<version>-windows-x64.exe`. Double-click it. On the
+  first run, SmartScreen may warn about an unrecognised app: choose
+  *More info → Run anyway*.
+- **macOS (Apple silicon):** `PyPrimer-<version>-macos-arm64.dmg`. Open it
+  and drag PyPrimer to Applications. The app isn't signed, so the first time,
+  right-click it and choose *Open*.
+
+Double-clicking opens PyPrimer in its own window. The same file also works as
+the [command line](#command-line) tool when you give it a command, for example
+`./PyPrimer-2.0.0-x86_64.AppImage analyse GAGAATGTGGGCTCTCAAGC` or
+`PyPrimer-2.0.0-windows-x64.exe serve --open` to use your browser instead.
+
+### Install with Python
+
 You need Python 3.10 or later. Install PyPrimer into a virtual environment
 and start the web interface:
 
@@ -52,7 +76,8 @@ Ctrl+C. Use `--port` to pick another port.
 ### As a desktop app
 
 PyPrimer can also run as a standalone application in its own window, with no
-browser involved. Install the `desktop` extra and start it with `--window`:
+browser involved. Install the `desktop` extra and start it with `--window`
+(or with no command at all, which does the same):
 
 ```bash
 .venv/bin/pip install -e '.[server,desktop]'
@@ -426,12 +451,13 @@ src/pyprimer/
   autodimer.py   AutoDimer primer-dimer and hairpin screening of oligo sets
   degenerate.py  degenerate (IUPAC) primer pools, sequence logo data, inosine
   universal.py   DegePrime port: alignment trimming, universal degenerate primers
-  cli.py         command-line entry point
+  cli.py         command-line entry point (no command: desktop window)
   desktop.py     standalone desktop window (pywebview) for `serve --window`
   web/           Flask app factory, JSON API, template and static assets
   data/gcg.603   REBASE restriction enzyme database
 tests/           unit, API, PerlPrimer, DegePrime and NIST AutoDimer parity tests
-tools/           Perl harness generator and NIST AutoDimer fixture fetcher
+packaging/       PyInstaller spec, AppImage files, icons and build.py for the binaries
+tools/           Perl harness generator, NIST AutoDimer fixture fetcher, icon generator
 ```
 
 ### Setup and checks
@@ -442,6 +468,24 @@ tools/           Perl harness generator and NIST AutoDimer fixture fetcher
 .venv/bin/mypy
 .venv/bin/pytest
 ```
+
+### Building the binaries
+
+The downloadable files are built with [PyInstaller](https://pyinstaller.org/).
+Each one has to be built on its own operating system:
+
+```bash
+.venv/bin/pip install -e '.[server,desktop,bundle]'
+.venv/bin/python packaging/build.py
+```
+
+This writes `dist/PyPrimer-<version>-x86_64.AppImage` on Linux (the AppImage
+bundles Qt WebEngine, and appimagetool is downloaded on first use),
+`dist/PyPrimer-<version>-windows-x64.exe` on Windows and
+`dist/PyPrimer-<version>-macos-<arch>.dmg` on macOS. The *Build binaries*
+GitHub Actions workflow builds all three on demand. Pushing a `v*` tag also
+attaches them to a GitHub Release. To redraw the icons, run
+`python tools/make_icons.py` (needs Pillow).
 
 ### Testing
 

@@ -22,6 +22,8 @@ dependencies = ["flask>=3.0"]
 [project.optional-dependencies]
 server = ["waitress>=3.0"]
 desktop = ["pywebview>=5.0"]
+# Freezing into a standalone binary (python packaging/build.py); Linux bundles Qt WebEngine.
+bundle = ["pyinstaller>=6.10", "pywebview[qt]>=5.0; sys_platform == 'linux'"]
 dev = ["pytest>=8", "ruff>=0.5", "mypy>=1.10"]
 
 [project.scripts]
