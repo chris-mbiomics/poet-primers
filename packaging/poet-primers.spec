@@ -68,8 +68,11 @@ if not (IS_WIN or IS_MAC):
     # Qt hooks collect far more than a QWebEngineView needs (QML modules, Quick3D,
     # Multimedia, ...). WebEngineCore itself links Quick/Qml/Positioning, so those stay.
     # The GTK3 platform theme is dropped too: bundling GTK clashes with host themes.
-    # libstdc++ must come from the host: the host's OpenGL driver (e.g. Mesa 25.x) needs
-    # a newer one than we would bundle, and loading ours made GLX init fail and crash.
+    # libstdc++ and libgbm must come from the host, because they have to match its
+    # Mesa graphics driver. With a bundled libstdc++ older than Mesa 25 needs, GLX init
+    # failed and the window crashed; with a bundled libgbm from the build machine,
+    # GBM init failed and the page never drew (white window).
+    _HOST_LIBS = ("libgtk-3.so", "libgdk-3.so", "libstdc++.so", "libgbm.so")
     _UNUSED_QT = re.compile(
         r"libQt6(Quick3D\w*|QuickControls2\w*|QuickDialogs2\w*|QuickEffects|QuickLayouts"
         r"|QuickParticles|QuickShapes|QuickTemplates2|QuickTest|QuickTimeline\w*"
@@ -83,7 +86,7 @@ if not (IS_WIN or IS_MAC):
         name = dest.rsplit("/", 1)[-1]
         if "PyQt6/Qt6/qml/" in dest or dest.endswith("platformthemes/libqgtk3.so"):
             return False
-        if name.startswith(("libgtk-3.so", "libgdk-3.so", "libstdc++.so")) or _UNUSED_QT.match(name):
+        if name.startswith(_HOST_LIBS) or _UNUSED_QT.match(name):
             return False
         if "PyQt6/Qt6/translations/" in dest:  # UI is English; keep WebEngine's en-US pack
             return dest.endswith("qtwebengine_locales/en-US.pak")

@@ -128,3 +128,28 @@ def test_console_hiding_is_noop_elsewhere() -> None:
     from poet_primers._winconsole import hide_if_owned
 
     assert hide_if_owned() is False
+
+
+def test_busy_port_falls_back(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A second window (port taken) starts on another port instead of exiting."""
+    import socket
+
+    seen: dict[str, Any] = {}
+    fake = types.SimpleNamespace(
+        settings={},
+        SAVE_DIALOG="save",
+        create_window=lambda title, url, **kw: seen.setdefault("url", url),
+        start=lambda **kw: None,
+    )
+    monkeypatch.setitem(sys.modules, "webview", fake)
+    monkeypatch.setattr(desktop, "_data_dir", lambda: tmp_path / "store")
+    monkeypatch.setattr(desktop, "_gui", lambda: None)
+    with socket.socket() as busy:
+        busy.bind(("127.0.0.1", 0))
+        busy.listen()
+        port = busy.getsockname()[1]
+        assert desktop.run_window(port) == 0
+    assert f":{port}/" not in seen["url"]
+    assert f"Port {port} is in use" in capsys.readouterr().err

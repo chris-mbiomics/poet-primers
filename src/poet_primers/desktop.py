@@ -11,6 +11,7 @@ from __future__ import annotations
 import importlib.util
 import logging
 import os
+import socket
 import sys
 import threading
 from pathlib import Path
@@ -65,6 +66,16 @@ class _Api:
         return True
 
 
+def _port_free(port: int) -> bool:
+    """True if 127.0.0.1:``port`` can be bound (werkzeug exits instead of raising)."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        try:
+            probe.bind(("127.0.0.1", port))
+        except OSError:
+            return False
+    return True
+
+
 def run_window(port: int) -> int:
     """Serve the app on ``127.0.0.1:port`` and show it in a desktop window until closed."""
     try:
@@ -78,9 +89,9 @@ def run_window(port: int) -> int:
 
     app = create_app()
     logging.getLogger("werkzeug").setLevel(logging.WARNING)  # no per-request log lines
-    try:
+    if port == 0 or _port_free(port):
         server = make_server("127.0.0.1", port, app, threaded=True)
-    except OSError:
+    else:  # e.g. a second window: any free port (separate preferences origin)
         server = make_server("127.0.0.1", 0, app, threaded=True)
         print(
             f"Port {port} is in use; using {server.port} instead "
