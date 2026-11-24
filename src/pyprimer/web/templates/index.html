@@ -97,6 +97,7 @@
     <button role="tab" data-tab="sequencing" aria-selected="false">Sequencing</button>
     <button role="tab" data-tab="analyse" aria-selected="false">Primer analysis</button>
     <button role="tab" data-tab="degenerate" aria-selected="false">Degenerate primers</button>
+    <button role="tab" data-tab="universal" aria-selected="false">Universal primers</button>
     <button role="tab" data-tab="autodimer" aria-selected="false">AutoDimer</button>
     <button role="tab" data-tab="prefs" aria-selected="false">Preferences</button>
   </nav>
@@ -269,6 +270,103 @@
     </section>
   </section>
 
+  <!-- Universal primers (DegePrime) -->
+  <section class="panel" id="tab-universal" data-mode="universal" role="tabpanel" hidden>
+    <form class="inputs" novalidate>
+      <div class="seq-box">
+        <div class="seq-head">
+          <span class="label">Alignment (FASTA)</span>
+          <span class="seq-len" data-role="alignment-size">no sequences</span>
+        </div>
+        <textarea data-path="alignment" rows="10" spellcheck="false" autocomplete="off" aria-label="Alignment" wrap="off"
+          placeholder="&gt;seq1&#10;--AGAGTTTGATCCTGGCTCAG…&#10;&gt;seq2&#10;..AGAGTTTGATCATGGCTCAG…"></textarea>
+        <div class="toolbar">
+          <label class="btn ghost small file-btn">Open file…<input type="file" accept=".fa,.fasta,.fas,.fna,.afa,.aln,.txt" data-load-into="alignment" hidden></label>
+          <button type="button" class="btn ghost small" data-action="download-trimmed">Download trimmed alignment</button>
+        </div>
+      </div>
+      <fieldset class="card">
+        <legend>Trimming</legend>
+        <p class="help">Removes columns that most sequences leave empty, such as insertions found in only a few sequences. 0.9 keeps columns where at least 90 % of sequences have a base.</p>
+        <div class="grid two">
+          {{ num("trim.min_occupancy", "Min. occupancy (0–1)", "any", 0, hint="0 keeps every column") }}
+          <label class="field" title="Keep only the columns where this sequence has a base, e.g. E. coli for E. coli numbering">
+            <span>Or keep columns of</span>
+            <input type="text" data-path="trim.reference" spellcheck="false" autocomplete="off" placeholder="reference name">
+          </label>
+        </div>
+        <details class="advanced">
+          <summary>Missing sequence ends (.)</summary>
+          <div class="grid two">
+            {{ num("trim.max_trailing", "Max. fraction with '.'", "any", 0, hint="Drop columns where more than this fraction of sequences is missing ('.')") }}
+          </div>
+          {{ check("trim.trailing_as_gap", "Count '.' as gaps for occupancy") }}
+        </details>
+      </fieldset>
+      <fieldset class="card">
+        <legend>Primer search</legend>
+        <p class="help">Finds, at every position, the degenerate primer that matches the most sequences. Max. degeneracy is how many different oligos the primer may stand for (Y = C or T counts 2, N counts 4); 12 is a common choice.</p>
+        <div class="grid two">
+          {{ num("settings.length", "Primer length", "1", 3) }}
+          {{ num("settings.max_degeneracy", "Max. degeneracy", "1", 1, hint="Rounded down to a possible value: 1, 2, 3, 4, 6, 8, 9, 12, 16, 18, 24, …") }}
+        </div>
+        <details class="advanced">
+          <summary>Advanced</summary>
+          <div class="grid">
+            {{ num("settings.skip", "Skip ends (nt)", "1", 0, hint="Ignore this many bases at both ends of every sequence, where alignments are least reliable") }}
+            {{ num("settings.min_depth", "Min. depth", "1", 1, hint="Skip positions where fewer sequences are complete (no gap) across the primer") }}
+            {{ num("settings.start", "First position", "1", 0, hint="Search only from this position of the trimmed alignment (0-based)") }}
+            {{ num("settings.end", "Last position", "1", 0, hint="0 = up to the end") }}
+            {{ num("settings.iterations", "Iterations", "1", 1, hint="Random search rounds per position; more can find slightly better primers but is slower") }}
+            {{ num("settings.seed", "Random seed", "1", hint="The same seed always gives the same result") }}
+          </div>
+        </details>
+      </fieldset>
+      <fieldset class="card">
+        <legend>Taxon coverage</legend>
+        <div class="grid two">
+          <label class="field">
+            <span>Taxonomy from</span>
+            <select data-path="taxonomy_source">
+              <option value="none">no taxonomy</option>
+              <option value="headers">FASTA headers (SILVA style)</option>
+              <option value="table">name ⇥ taxonomy list</option>
+              <option value="rdp">RDP GenBank file</option>
+            </select>
+          </label>
+          {{ num("taxonomy_level", "Taxonomy level", "1", 1, hint="Number of ;-separated ranks to group by, e.g. 2 = domain;phylum") }}
+        </div>
+        <div class="seq-box" data-role="taxonomy-box" hidden>
+          <textarea data-path="taxonomy" rows="4" spellcheck="false" autocomplete="off" aria-label="Taxonomy" wrap="off"
+            placeholder="seq1&#9;Bacteria;Firmicutes;Bacilli&#10;seq2&#9;Bacteria;Proteobacteria;Gammaproteobacteria"></textarea>
+          <div class="toolbar">
+            <label class="btn ghost small file-btn">Open file…<input type="file" accept=".txt,.tsv,.tab,.gb,.gbk,.genbank" data-load-into="taxonomy" hidden></label>
+          </div>
+        </div>
+      </fieldset>
+      <div class="row">
+        <button type="submit" class="btn primary">Find universal primers</button>
+        <button type="button" class="btn ghost small" data-action="universal-defaults">Restore defaults</button>
+      </div>
+    </form>
+    <section class="results" aria-live="polite">
+      <div class="status" data-role="status"></div>
+      <div data-role="summary" hidden></div>
+      <div class="coverage-wrap" data-role="plot-wrap" hidden><svg class="coverage-plot" data-role="plot" role="img" aria-label="Coverage along the alignment"></svg></div>
+      <div class="table-actions" data-role="table-actions" hidden>
+        <span data-role="count"></span>
+        <span class="spacer"></span>
+        <label class="field inline" title="Only list windows whose primer matches at least this fraction of spanning sequences">
+          <span>Min. coverage</span>
+          <input type="number" data-role="min-fraction" min="0" max="1" step="0.05" value="0">
+        </label>
+        <button type="button" class="btn ghost small" data-action="export">Export DegePrime TSV</button>
+      </div>
+      <div class="table-wrap" data-role="table-wrap" hidden><table class="results-table universal" data-role="table"></table></div>
+      <div class="details universal" data-role="details" hidden></div>
+    </section>
+  </section>
+
   <!-- AutoDimer -->
   <section class="panel" id="tab-autodimer" data-mode="autodimer" role="tabpanel" hidden>
     <form class="inputs" novalidate>
@@ -367,7 +465,7 @@
 </main>
 
 <footer class="footer">
-  PyPrimer {{ version }} · Python port of PerlPrimer 1.1.21 by Owen Marshall · AutoDimer after Vallone &amp; Butler (NIST) · GNU GPL v2 or later · Restriction enzyme data from REBASE
+  PyPrimer {{ version }} · Python port of PerlPrimer 1.1.21 by Owen Marshall · AutoDimer after Vallone &amp; Butler (NIST) · Universal primers after DegePrime by Hugerth et al. · GNU GPL v2 or later · Restriction enzyme data from REBASE
 </footer>
 
 <dialog id="ensembl-dialog" aria-labelledby="ensembl-title">

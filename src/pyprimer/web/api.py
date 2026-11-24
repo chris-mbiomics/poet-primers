@@ -59,6 +59,19 @@ from ..report import (
 )
 from ..sequence import parse_sequence
 from ..thermo import Conditions
+from ..universal import (
+    AlignedSeq,
+    DegePrimeSettings,
+    Trimmed,
+    TrimSettings,
+    degeprime,
+    parse_alignment,
+    taxonomy_from_headers,
+    taxonomy_from_rdp_genbank,
+    taxonomy_from_table,
+    to_fasta,
+    trim_alignment,
+)
 from .schema import SchemaError, build, dump
 
 api = Blueprint("api", __name__)
@@ -168,6 +181,19 @@ class DegenerateRequest:
     conditions: Conditions = field(default_factory=Conditions)
 
 
+@dataclass(frozen=True)
+class UniversalRequest:
+    alignment: str = ""
+    trim: TrimSettings = field(default_factory=TrimSettings)
+    settings: DegePrimeSettings = field(default_factory=DegePrimeSettings)
+    taxonomy_source: str = "none"  # none | headers | table | rdp
+    taxonomy: str = ""
+    taxonomy_level: int = 2
+
+
+TAXONOMY_SOURCES = ("none", "headers", "table", "rdp")
+
+
 # --------------------------------------------------------------------------
 # Error handling
 # --------------------------------------------------------------------------
@@ -235,6 +261,7 @@ def defaults() -> Response:
         conditions=dump(Conditions()),
         cpg=dump(CpGSettings()),
         autodimer=dump(AutoDimerSettings()),
+        universal={"trim": dump(TrimSettings()), "settings": dump(DegePrimeSettings())},
         anchor=DEFAULT_ANCHOR,
     )
 
@@ -361,6 +388,59 @@ def degenerate_primer() -> Response:
             "replaced": inosine.count("I"),
         },
     )
+
+
+def _universal_input(
+    body: dict[str, Any],
+) -> tuple[UniversalRequest, tuple[AlignedSeq, ...], Trimmed]:
+    req = build(UniversalRequest, body)
+    if req.taxonomy_source not in TAXONOMY_SOURCES:
+        raise ApiError(f"Unknown taxonomy source {req.taxonomy_source!r}")
+    try:
+        seqs = parse_alignment(req.alignment)
+        return req, seqs, trim_alignment(seqs, req.trim)
+    except ValueError as exc:
+        raise ApiError(str(exc)) from exc
+
+
+@api.post("/universal")
+def universal() -> Response:
+    """DegePrime: the best degenerate primer at every window of an alignment."""
+    req, seqs, trimmed = _universal_input(_payload())
+    try:
+        taxonomy = None
+        if req.taxonomy_source == "headers":
+            taxonomy = taxonomy_from_headers(seqs)
+        elif req.taxonomy_source == "table":
+            taxonomy = taxonomy_from_table(req.taxonomy)
+        elif req.taxonomy_source == "rdp":
+            taxonomy = taxonomy_from_rdp_genbank(req.taxonomy)
+        if taxonomy is not None and not taxonomy.keys() & {x.id for x in seqs}:
+            raise ValueError("None of the aligned sequences has a taxonomy entry")
+        result = degeprime(
+            trimmed.seqs,
+            req.settings,
+            columns=trimmed.columns,
+            taxonomy=taxonomy,
+            level=req.taxonomy_level,
+            workers=current_app.config["DEGEPRIME_WORKERS"],
+        )
+    except ValueError as exc:
+        raise ApiError(str(exc)) from exc
+    return jsonify(
+        **dump(result),
+        sequences=len(seqs),
+        columns_in=len(seqs[0].seq),
+        columns_out=len(trimmed.columns),
+        max_degeneracy_requested=req.settings.max_degeneracy,
+    )
+
+
+@api.post("/universal/trim")
+def universal_trim() -> Response:
+    """The trimmed alignment as FASTA (TrimAlignment.pl output)."""
+    _, _, trimmed = _universal_input(_payload())
+    return jsonify(fasta=to_fasta(trimmed.seqs), columns=len(trimmed.columns))
 
 
 @api.post("/details")

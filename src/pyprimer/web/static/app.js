@@ -123,7 +123,10 @@
   }
 
   function reverseComplement(seq) {
-    const map = { A: "T", C: "G", G: "C", T: "A", a: "t", c: "g", g: "c", t: "a" };
+    const map = {
+      A: "T", C: "G", G: "C", T: "A", a: "t", c: "g", g: "c", t: "a",
+      R: "Y", Y: "R", K: "M", M: "K", B: "V", V: "B", D: "H", H: "D",
+    };
     return seq.split("").reverse().map((c) => map[c] || c).join("");
   }
 
@@ -897,6 +900,348 @@
     });
   }
 
+  // ------------------------------------------------- universal primers tab
+
+  const UNIVERSAL_KEY = "pyprimer.universal.v1";
+  const UNIVERSAL_SAVE_LIMIT = 200000; // characters of alignment kept in localStorage
+  const UNIVERSAL_COLUMNS = [
+    // label, key, kind, title
+    ["Pos", "pos", "num", "0-based position in the trimmed alignment (DegePrime's Pos)"],
+    ["Column", "column", "num", "1-based column of the first base in the alignment as given"],
+    ["Spanning", "spanning", "num", "Sequences spanning the window, including those with gaps"],
+    ["Unique", "unique", "num", "Distinct gap-free oligos in the window"],
+    ["Entropy", "entropy", "fixed", "Shannon entropy (bits) of the oligos in the window"],
+    ["Deg.", "degeneracy", "num", "Degeneracy of the primer"],
+    ["Primer (5′→3′)", "primer", "seq", "Best degenerate primer found"],
+    ["Matching", "matching", "num", "Sequences the primer matches"],
+    ["Coverage", "fraction", "pct", "Matching ÷ spanning"],
+  ];
+
+  const pct = (v) => (v == null ? "—" : `${(v * 100).toFixed(1)}%`);
+  // Numbers as Perl prints them (15 significant digits), for DegePrime-compatible output.
+  const perlNum = (v) => String(parseFloat(v.toPrecision(15)));
+
+  function alignmentSize(text) {
+    let n = 0, cols = 0, first = true;
+    for (const line of text.split(/\r?\n/)) {
+      if (line.startsWith(">")) {
+        if (n++ === 1) first = false;
+      } else if (n === 1 && first) cols += line.replace(/\s/g, "").length;
+    }
+    return { n, cols };
+  }
+
+  function degeprimeTsv(data) {
+    const head = ["Pos", "NumberSpanning", "UniqueMers", "Entropy", "PrimerDeg", "PrimerSeq", "NumberMatching", "FractionMatching"];
+    data.taxa.forEach((t) => head.push(`Spanning ${t}`, `Matching ${t}`, `Fraction ${t}`));
+    const lines = [head.join("\t")];
+    data.windows.forEach((w) => {
+      const cells = [w.pos, w.spanning, w.unique, perlNum(w.entropy), w.degeneracy, w.primer, w.matching, perlNum(w.fraction)];
+      w.taxa.forEach((c) => cells.push(c.spanning, c.matching, c.matching && c.spanning ? perlNum(c.matching / c.spanning) : "NA"));
+      lines.push(cells.join("\t"));
+    });
+    return lines.join("\n") + "\n";
+  }
+
+  // The window whose primer matches the most sequences (then the highest coverage).
+  const bestWindow = (windows) =>
+    windows.reduce((a, w) => (!a || w.matching > a.matching || (w.matching === a.matching && w.fraction > a.fraction) ? w : a), null);
+
+  function initUniversal() {
+    const panel = $("#tab-universal");
+    const form = $("form", panel);
+    const textarea = field(panel, "alignment");
+    const sizeLabel = $('[data-role="alignment-size"]', panel);
+    const source = field(panel, "taxonomy_source");
+    const taxBox = $('[data-role="taxonomy-box"]', panel);
+    const summary = $('[data-role="summary"]', panel);
+    const plotWrap = $('[data-role="plot-wrap"]', panel);
+    const plot = $('[data-role="plot"]', panel);
+    const tableWrap = $('[data-role="table-wrap"]', panel);
+    const table = $('[data-role="table"]', panel);
+    const actions = $('[data-role="table-actions"]', panel);
+    const minFraction = $('[data-role="min-fraction"]', panel);
+    const box = $('[data-role="details"]', panel);
+    let result = null; // { data, rows, sort, selected }
+
+    const defaults = () => ({
+      alignment: "",
+      trim: state.defaults.universal.trim,
+      settings: state.defaults.universal.settings,
+      taxonomy_source: "none",
+      taxonomy: "",
+      taxonomy_level: 2,
+    });
+    const save = () => {
+      const values = readForm(form);
+      if (values.alignment.length > UNIVERSAL_SAVE_LIMIT) values.alignment = "";
+      if (values.taxonomy.length > UNIVERSAL_SAVE_LIMIT) values.taxonomy = "";
+      storageSet(UNIVERSAL_KEY, values);
+    };
+    const updateSize = () => {
+      const { n, cols } = alignmentSize(textarea.value);
+      sizeLabel.textContent = n ? `${n.toLocaleString()} sequence${n === 1 ? "" : "s"} · ${cols.toLocaleString()} columns` : "no sequences";
+    };
+    const updateTaxonomy = () => {
+      const kind = source.value;
+      taxBox.hidden = kind !== "table" && kind !== "rdp";
+      field(panel, "taxonomy").placeholder =
+        kind === "rdp" ? "LOCUS       S000000001 …\n  ORGANISM  …\n            Root; Bacteria; …\n//" : "seq1\tBacteria;Firmicutes;Bacilli\nseq2\tBacteria;Proteobacteria;Gammaproteobacteria";
+    };
+
+    fillForm(form, defaults());
+    const saved = storageGet(UNIVERSAL_KEY);
+    if (saved && typeof saved === "object") fillForm(form, saved);
+    updateSize();
+    updateTaxonomy();
+    textarea.addEventListener("input", () => (updateSize(), save()));
+    form.addEventListener("input", save);
+    form.addEventListener("change", save);
+    source.addEventListener("change", updateTaxonomy);
+    $('[data-action="universal-defaults"]', panel).addEventListener("click", () => {
+      const { trim, settings, taxonomy_level } = defaults();
+      fillForm(form, { trim, settings, taxonomy_level });
+      save();
+    });
+
+    // Drop blank number fields so the server uses its defaults.
+    const prune = (obj) =>
+      Object.fromEntries(
+        Object.entries(obj)
+          .filter(([, v]) => v !== null)
+          .map(([k, v]) => [k, v && typeof v === "object" && !Array.isArray(v) ? prune(v) : v]),
+      );
+    const request = () => {
+      const values = prune(readForm(form));
+      if (values.taxonomy_source === "none" || values.taxonomy_source === "headers") values.taxonomy = "";
+      return values;
+    };
+
+    const tile = (label, value, note = "") =>
+      `<div class="tile"><span class="label">${label}</span><span class="value">${value}</span>${note ? `<span class="note">${note}</span>` : ""}</div>`;
+
+    function renderSummary() {
+      const { data } = result;
+      const best = bestWindow(data.windows);
+      const rounded = data.max_degeneracy !== data.max_degeneracy_requested;
+      summary.innerHTML = `<div class="tiles">
+        ${tile("Sequences", data.sequences.toLocaleString())}
+        ${tile("Columns", `${data.columns_in.toLocaleString()} → ${data.columns_out.toLocaleString()}`, "as given → trimmed")}
+        ${tile("Windows", data.windows.length.toLocaleString(), `${data.length} nt primers`)}
+        ${tile("Max. degeneracy", data.max_degeneracy, rounded ? `rounded down from ${data.max_degeneracy_requested}` : "")}
+        ${tile("Best window", best ? `${best.matching.toLocaleString()} matched` : "—", best ? `${pct(best.fraction)} coverage at position ${best.pos}` : "")}
+      </div>`;
+      summary.hidden = false;
+    }
+
+    function renderPlot() {
+      const { data } = result;
+      const n = Math.max(1, data.columns_out - data.length + 1);
+      plotWrap.hidden = !data.windows.length;
+      if (!data.windows.length) return;
+      const W = Math.max(320, plotWrap.clientWidth || 800), H = 180;
+      const left = 38, right = 40, top = 24, bottom = 26;
+      const pw = W - left - right, ph = H - top - bottom;
+      const x = (pos) => left + (pos / n) * pw;
+      const bw = Math.max(1, pw / n);
+      const maxH = Math.max(1, ...data.windows.map((w) => w.entropy));
+      const y = (f) => top + ph * (1 - f);
+      const bars = data.windows
+        .map((w, i) => `<rect class="bar${w === result.selected ? " sel" : ""}" data-i="${i}" x="${x(w.pos).toFixed(2)}" y="${y(w.fraction).toFixed(2)}" width="${bw.toFixed(2)}" height="${(ph * w.fraction).toFixed(2)}"><title>Position ${w.pos} · ${pct(w.fraction)} · ${escapeHtml(w.primer)}</title></rect>`)
+        .join("");
+      const line = data.windows.map((w, i) => `${i ? "L" : "M"}${(x(w.pos) + bw / 2).toFixed(2)} ${(top + ph * (1 - w.entropy / maxH)).toFixed(2)}`).join("");
+      const ticks = [0, 0.5, 1]
+        .map((f) => `<line class="grid" x1="${left}" x2="${left + pw}" y1="${y(f)}" y2="${y(f)}"/><text x="${left - 5}" y="${y(f) + 3.5}" text-anchor="end">${f * 100}%</text>`)
+        .join("");
+      const eticks = [0, maxH]
+        .map((h) => `<text x="${left + pw + 5}" y="${top + ph * (1 - h / maxH) + 3.5}">${h.toFixed(1)}</text>`)
+        .join("");
+      const sel = result.selected
+        ? `<line class="sel-line" x1="${x(result.selected.pos) + bw / 2}" x2="${x(result.selected.pos) + bw / 2}" y1="${top}" y2="${top + ph}"/>`
+        : "";
+      plot.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      plot.setAttribute("height", H);
+      plot.innerHTML = `${ticks}${bars}<path class="entropy" d="${line}"/>${eticks}${sel}
+        <text x="${left}" y="${H - 6}">0</text><text x="${left + pw}" y="${H - 6}" text-anchor="end">${(n - 1).toLocaleString()}</text>
+        <text x="${left + pw / 2}" y="${H - 6}" text-anchor="middle">window position (trimmed alignment)</text>
+        <g class="legend"><rect class="bar" x="${left}" y="4" width="10" height="8"/><text x="${left + 14}" y="11.5">coverage (left axis)</text>
+        <line class="entropy" x1="${left + 130}" x2="${left + 144}" y1="8" y2="8"/><text x="${left + 148}" y="11.5">entropy, bits (right axis)</text></g>`;
+      $$(".bar[data-i]", plot).forEach((r) => r.addEventListener("click", () => select(data.windows[Number(r.dataset.i)], true)));
+    }
+
+    function renderTable() {
+      const { data } = result;
+      const threshold = Number(minFraction.value) || 0;
+      const rows = result.rows.filter((w) => w.fraction >= threshold);
+      actions.hidden = tableWrap.hidden = !data.windows.length;
+      $('[data-role="count"]', panel).textContent =
+        `${data.windows.length.toLocaleString()} window${data.windows.length === 1 ? "" : "s"}` +
+        (rows.length < data.windows.length ? ` · ${rows.length.toLocaleString()} shown` : "");
+      const sort = result.sort;
+      const cell = (w, key, kind) => {
+        if (kind === "pct") return pct(w[key]);
+        if (kind === "fixed") return fmt(w[key], 3);
+        return escapeHtml(w[key]);
+      };
+      table.innerHTML =
+        `<thead><tr>${UNIVERSAL_COLUMNS.map(([label, , , title], i) => {
+          const s = sort && sort.col === i ? (sort.dir > 0 ? "ascending" : "descending") : "none";
+          return `<th scope="col" data-col="${i}" aria-sort="${s}" title="${escapeHtml(title)}">${escapeHtml(label)}</th>`;
+        }).join("")}</tr></thead>` +
+        `<tbody>${rows
+          .map((w) => `<tr data-pos="${w.pos}" aria-selected="${w === result.selected}">${UNIVERSAL_COLUMNS.map(([, key, kind]) => `<td class="${kind === "seq" ? "seq" : "num"}">${cell(w, key, kind)}</td>`).join("")}</tr>`)
+          .join("")}</tbody>`;
+      $$("th", table).forEach((th) =>
+        th.addEventListener("click", () => {
+          const col = Number(th.dataset.col);
+          const key = UNIVERSAL_COLUMNS[col][1];
+          const dir = result.sort && result.sort.col === col ? -result.sort.dir : key === "pos" || key === "column" || key === "primer" ? 1 : -1;
+          result.sort = { col, dir };
+          result.rows = [...result.rows].sort((a, b) => (a[key] < b[key] ? -dir : a[key] > b[key] ? dir : a.pos - b.pos));
+          renderTable();
+        }),
+      );
+      const byPos = new Map(data.windows.map((w) => [w.pos, w]));
+      $$("tbody tr", table).forEach((tr) => tr.addEventListener("click", () => select(byPos.get(Number(tr.dataset.pos)))));
+    }
+
+    function copyButton(text) {
+      return `<button type="button" class="btn ghost small" data-copy="${escapeHtml(text)}">Copy</button>`;
+    }
+
+    async function renderDetails() {
+      const w = result.selected;
+      if (!w) {
+        box.hidden = true;
+        return;
+      }
+      const { data } = result;
+      const rc = reverseComplement(w.primer);
+      const taxa = data.taxa.length
+        ? `<h3>Coverage by taxon <span class="muted">(level ${escapeHtml(result.level)})</span></h3>
+          <div class="table-wrap taxa-wrap"><table class="results-table taxa">
+            <thead><tr><th>Taxon</th><th class="num">Spanning</th><th class="num">Matching</th><th>Coverage</th></tr></thead>
+            <tbody>${data.taxa
+              .map((t, i) => {
+                const c = w.taxa[i];
+                const f = c.spanning ? c.matching / c.spanning : null;
+                return `<tr><td class="taxon" title="${escapeHtml(t)}">${escapeHtml(t)}</td><td class="num">${c.spanning}</td><td class="num">${c.matching}</td>
+                  <td class="cov"><span class="meter"><span style="width:${((f ?? 0) * 100).toFixed(1)}%"></span></span>${pct(f)}</td></tr>`;
+              })
+              .join("")}</tbody></table></div>`
+        : "";
+      box.innerHTML = `
+        <div class="detail-head"><h2>Window at position ${w.pos}</h2><span class="muted">alignment column ${w.column.toLocaleString()}</span><span class="spacer"></span>
+          <button type="button" class="btn small" data-action="open-degenerate">Open in Degenerate primers</button></div>
+        <div class="primer-cards">
+          <div class="primer-card fwd"><h3>As forward primer (5′→3′)</h3><div class="ino-row"><span class="ino-seq">${escapeHtml(w.primer)}</span>${copyButton(w.primer)}</div></div>
+          <div class="primer-card rev"><h3>As reverse primer (5′→3′)</h3><div class="ino-row"><span class="ino-seq">${escapeHtml(rc)}</span>${copyButton(rc)}</div></div>
+        </div>
+        <div class="tiles">
+          ${tile("Coverage", pct(w.fraction), `${w.matching.toLocaleString()} of ${w.spanning.toLocaleString()} spanning`)}
+          ${tile("Degeneracy", w.degeneracy, `${w.unique.toLocaleString()} distinct oligos in window`)}
+          ${tile("Entropy", `${fmt(w.entropy, 2)} bits`)}
+          <div data-role="pool">${tile("Tm min / avg / max (°C)", "…")}</div>
+        </div>
+        ${taxa}`;
+      box.hidden = false;
+      $$("[data-copy]", box).forEach((b) =>
+        b.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(b.dataset.copy);
+            b.textContent = "Copied";
+          } catch {
+            b.textContent = "Copy failed";
+          }
+        }),
+      );
+      $('[data-action="open-degenerate"]', box).addEventListener("click", () => {
+        const deg = $("#tab-degenerate");
+        const input = field(deg, "sequence");
+        input.value = w.primer;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        $('.tabs [data-tab="degenerate"]').click();
+        $("form", deg).requestSubmit();
+      });
+      const poolBox = $('[data-role="pool"]', box);
+      try {
+        const pool = await api("/degenerate", { sequence: w.primer, conditions: state.prefs.conditions });
+        if (result.selected !== w) return;
+        const spread = (s, d = 1) => (s ? `${fmt(s.min, d)} / ${fmt(s.avg, d)} / ${fmt(s.max, d)}` : "—");
+        poolBox.outerHTML = `${tile("Tm min / avg / max (°C)", spread(pool.tm), "conditions from Preferences")}${tile("%GC min / avg / max", spread(pool.gc))}`;
+      } catch (err) {
+        poolBox.innerHTML = tile("Tm", "—", escapeHtml(err.message));
+      }
+    }
+
+    function select(w, scroll = false) {
+      result.selected = w;
+      renderTable();
+      renderPlot();
+      renderDetails();
+      const row = scroll && $(`tr[data-pos="${w.pos}"]`, table);
+      if (row) {
+        // Scroll the table only, not the page.
+        const head = $("thead", table).offsetHeight;
+        if (row.offsetTop - head < tableWrap.scrollTop || row.offsetTop + row.offsetHeight > tableWrap.scrollTop + tableWrap.clientHeight) {
+          tableWrap.scrollTop = row.offsetTop - head - tableWrap.clientHeight / 3;
+        }
+      }
+    }
+
+    function clearResults() {
+      result = null;
+      [summary, plotWrap, actions, tableWrap, box].forEach((el) => (el.hidden = true));
+    }
+
+    async function run(button) {
+      setStatus(panel, "");
+      const body = request();
+      const { n } = alignmentSize(body.alignment || "");
+      await busy(button, async () => {
+        setStatus(panel, `Searching ${n.toLocaleString()} sequences for universal primers…`, "busy");
+        try {
+          const data = await api("/universal", body);
+          setStatus(panel, data.windows.length ? "" : "No window has enough gap-free sequences. Lower the minimum depth or the skipped ends, or trim more columns.", data.windows.length ? "" : "error");
+          const best = bestWindow(data.windows);
+          result = { data, rows: data.windows, sort: null, selected: best, level: body.taxonomy_level ?? 2 };
+          renderSummary();
+          if (best) select(best, true);
+          else [plotWrap, actions, tableWrap, box].forEach((el) => (el.hidden = true));
+        } catch (err) {
+          clearResults();
+          setStatus(panel, err.message, "error");
+        }
+      });
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      run(event.submitter);
+    });
+    minFraction.addEventListener("input", () => result && renderTable());
+    $('[data-action="export"]', panel).addEventListener("click", () => {
+      if (result) download("degeprime.tsv", degeprimeTsv(result.data), "text/tab-separated-values");
+    });
+    $('[data-action="download-trimmed"]', panel).addEventListener("click", async (event) => {
+      const { alignment, trim } = request();
+      setStatus(panel, "");
+      await busy(event.currentTarget, async () => {
+        try {
+          const data = await api("/universal/trim", { alignment, trim });
+          download("trimmed_alignment.fasta", data.fasta);
+        } catch (err) {
+          setStatus(panel, err.message, "error");
+        }
+      });
+    });
+    window.addEventListener("resize", () => {
+      if (result && !panel.hidden) renderPlot();
+    });
+    // The plot is sized from its container, which has no width while the tab is hidden.
+    $('.tabs [data-tab="universal"]').addEventListener("click", () => result && requestAnimationFrame(renderPlot));
+  }
+
   // ---------------------------------------------------------- AutoDimer tab
 
   const AUTODIMER_KEY = "pyprimer.autodimer.v1";
@@ -1184,6 +1529,7 @@
     });
     initAnalysis();
     initDegenerate();
+    initUniversal();
     initSequenceBoxes();
     initAutoDimer();
     initEnsembl();

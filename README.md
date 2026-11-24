@@ -1,15 +1,15 @@
 # PyPrimer
 
 Design PCR primers in your browser: standard PCR, bisulphite PCR, real-time
-PCR (qPCR) and sequencing, plus primer-dimer and hairpin screening of whole
-multiplex sets.
+PCR (qPCR) and sequencing, universal degenerate primers from an alignment,
+plus primer-dimer and hairpin screening of whole multiplex sets.
 
 Paste a sequence (or fetch one from Ensembl), say where the amplicon should
 be, and PyPrimer lists primer pairs that meet your Tm, length and GC
 constraints, ranked by how little they dimerise. Click a pair to see its
 thermodynamics, dimer alignments and where it sits on the sequence.
 
-![Standard PCR: a designed primer pair with its dimer analysis and sequence map](docs/images/standard-pcr.png)
+![Standard PCR: a designed primer pair with its thermodynamics and dimer analysis](docs/images/standard-pcr.webp)
 
 PyPrimer is a Python port of [PerlPrimer](http://perlprimer.sourceforge.net/)
 1.1.21 by Owen Marshall. If you have used PerlPrimer, the design modes,
@@ -24,10 +24,12 @@ and give identical output. What changed is listed under
 - [Designing primers](#designing-primers)
 - [Checking primers you already have](#checking-primers-you-already-have)
 - [Degenerate (wobble) primers](#degenerate-wobble-primers)
+- [Universal primers from an alignment (DegePrime)](#universal-primers-from-an-alignment-degeprime)
 - [Screening a multiplex set (AutoDimer)](#screening-a-multiplex-set-autodimer)
 - [Preferences](#preferences)
 - [Command line](#command-line)
 - [Differences from PerlPrimer](#differences-from-perlprimer)
+- [DegePrime details](#degeprime-details)
 - [For developers](#for-developers)
 - [Licence and credits](#licence-and-credits)
 
@@ -155,6 +157,46 @@ The **Degenerate primers** tab describes that pool:
 Tm is only calculated for pools of up to 4,096 oligos; %GC is exact for any
 pool size. There are no nearest-neighbour parameters for inosine, so the Tm
 of the inosine primer is not calculated.
+
+## Universal primers from an alignment (DegePrime)
+
+Primers meant for a whole group of organisms, such as 16S rRNA primers for
+all bacteria, must bind a region that differs slightly between species. The
+**Universal primers** tab takes an alignment of those sequences and finds,
+at every position, the degenerate primer that matches as many of them as
+possible.
+
+![Universal primers: coverage along a 200-sequence alignment and the best primers found](docs/images/universal.webp)
+
+1. Paste or open a multiple sequence alignment in FASTA format (from MAFFT,
+   Clustal, SILVA, RDP, …).
+2. **Trimming** removes columns that most sequences leave empty, such as
+   insertions in only a few sequences. *Min. occupancy* 0.9 usually works
+   well. To number positions along one sequence instead (for example
+   *E. coli*), enter its name under *Or keep columns of*.
+3. **Primer search**: set the *Primer length* and the *Max. degeneracy*, the
+   number of different oligos the primer may stand for (Y = C or T counts 2,
+   N counts 4). 12 is a common choice.
+4. Click **Find universal primers**. The plot shows the coverage (the
+   fraction of sequences matched) and the variability of every position;
+   conserved regions show up as high coverage and low entropy. Click a bar or
+   a table row to see that primer, its reverse complement for use as a
+   reverse primer, and its Tm range.
+5. Optionally, **Taxon coverage** shows how well each group is covered, for
+   example per phylum. Taxonomy can come from SILVA-style FASTA headers
+   (`>id Bacteria;Firmicutes;…`), a pasted `name<TAB>taxonomy` list or an RDP
+   GenBank file.
+
+Pick a high-coverage position near each end of the region you want to
+amplify, use the second primer's reverse complement, and check the pair on
+the **Primer analysis** and **AutoDimer** tabs. *Open in Degenerate primers*
+shows a primer's full oligo pool, and *Export DegePrime TSV* saves the
+results table. Searches of up to about 1,000 sequences by 2,000 columns take
+seconds.
+
+This is a port of DegePrime by Hugerth et al.; see
+[DegePrime details](#degeprime-details) for how it works and where it
+differs.
 
 ## Screening a multiplex set (AutoDimer)
 
@@ -295,6 +337,45 @@ Deliberate differences from the NIST service:
 - The paper's own example (Figure 3) gives Tm 7.5 °C and ΔG −2.42 kcal/mol for
   the VB program, versus 4.0 °C and −1.89 kcal/mol here and on the NIST site.
 
+## DegePrime details
+
+The Universal primers tab ports [DegePrime](https://github.com/EnvGen/DEGEPRIME)
+(Hugerth et al., *Appl Environ Microbiol* 80:5116–5123, 2014) and its three
+scripts:
+`TrimAlignment.pl` (trimming), `DegePrime.pl` (the primer search, with
+coverage per taxon) and `MakeSilvaTaxonomy.pl` / `MakeRdpTaxonomy.pl`
+(taxonomy from SILVA headers and RDP GenBank files). The search uses
+DegePrime's *Weighted Randomised Merging*: in each of *Iterations* rounds,
+distinct oligos in the window are drawn at random, weighted by how many
+sequences carry them, and merged into a degenerate primer while its
+degeneracy stays within the limit; the round matching the most sequences
+wins. The draw, including its slight bias towards the first-listed oligo
+and the way drawn oligos are removed from the pool, is ported as written.
+
+Trimming output and the search output are compared with the Perl scripts
+in `tests/test_universal.py` (set `DEGEPRIME_DIR` to a DegePrime checkout).
+Wherever the search has a single answer, the output is identical; elsewhere
+both pick at random, and they find primers of the same coverage on average.
+
+Differences:
+
+- **Reproducible results**: DegePrime used Perl's unseeded random numbers
+  and hash order, so every run could differ. Here every window has its own
+  random generator, seeded from *Random seed* and the window position, so
+  the same settings always give the same primers, and a search of part of
+  the alignment gives the same primers as a full search. Large searches are
+  split over several processes.
+- **Speed**: rounds stop early once no further oligo can be merged, and
+  windows where every oligo fits within the degeneracy limit skip the
+  random search (it always returns all of them).
+- **Duplicate sequence names** are rejected; DegePrime silently kept only
+  the last sequence with a given name.
+- **Taxa** are listed only if they occur in the alignment, and sequences
+  without a taxonomy are counted as *(unassigned)* (DegePrime left them
+  out). RDP records without a `Root;…` lineage are skipped (the Perl script
+  reused the previous record's lineage).
+- The output adds the alignment column of each window, before trimming.
+
 ## For developers
 
 ### Using PyPrimer as a Python library
@@ -325,10 +406,11 @@ src/pyprimer/
   report.py      primer analysis, sequence maps, text reports
   autodimer.py   AutoDimer primer-dimer and hairpin screening of oligo sets
   degenerate.py  degenerate (IUPAC) primer pools, sequence logo data, inosine
+  universal.py   DegePrime port: alignment trimming, universal degenerate primers
   cli.py         command-line entry point
   web/           Flask app factory, JSON API, template and static assets
   data/gcg.603   REBASE restriction enzyme database
-tests/           unit, API, PerlPrimer and NIST AutoDimer parity tests
+tests/           unit, API, PerlPrimer, DegePrime and NIST AutoDimer parity tests
 tools/           Perl harness generator and NIST AutoDimer fixture fetcher
 ```
 
@@ -352,6 +434,14 @@ PerlPrimer's algorithm subroutines into a headless harness
 PERLPRIMER_PL=perlprimer-1.1.21/perlprimer.pl .venv/bin/pytest tests/test_parity.py
 ```
 
+The DegePrime tests compare trimming and searches with the original
+scripts when `DEGEPRIME_DIR` points to a checkout of
+[EnvGen/DEGEPRIME](https://github.com/EnvGen/DEGEPRIME):
+
+```bash
+DEGEPRIME_DIR=../DEGEPRIME .venv/bin/pytest tests/test_universal.py
+```
+
 `tests/test_autodimer_nist.py` replays results recorded from the NIST
 AutoDimer web service (`tests/data/autodimer_nist.json`) offline. To record
 them again (this sends only the script's synthetic test sequences to NIST):
@@ -369,6 +459,10 @@ or (at your option) any later version. See [LICENSE](LICENSE).
 - Restriction enzyme data from [REBASE](http://rebase.neb.com/).
 - AutoDimer: P. M. Vallone and J. M. Butler, National Institute of Standards
   and Technology (NIST).
+- DegePrime © 2008-2013 Anders Andersson.
 - Marshall OJ. PerlPrimer: cross-platform, graphical primer design for
   standard, bisulphite and real-time PCR. *Bioinformatics* 2004
   20(15):2471-2472.
+- Hugerth LW, Wefer HA, Lundin S, et al. DegePrime, a program for degenerate
+  primer design for broad-taxonomic-range PCR in microbial ecology studies.
+  *Appl Environ Microbiol* 2014 80(16):5116-5123.

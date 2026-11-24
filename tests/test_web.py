@@ -210,6 +210,74 @@ def test_degenerate_errors(client: FlaskClient, body: dict[str, object], message
     assert status == 400 and message in data["error"]
 
 
+UNIVERSAL_ALIGNMENT = """\
+>a1 Bacteria;Firmicutes;Bacilli
+AGAGTTTGATCCTGGCTCAG-ACGAACGCT
+>a2 Bacteria;Firmicutes;Clostridia
+AGAGTTTGATCATGGCTCAG-ACGAACGCT
+>a3 Bacteria;Proteobacteria;Gamma
+AGAGTTTGATCCTGGCTCAGTACGAACGCT
+>a4
+AGAGTTTGATTATGGCTCAG-ACGAACGCT
+"""
+
+
+def test_universal(client: FlaskClient) -> None:
+    body = {
+        "alignment": UNIVERSAL_ALIGNMENT,
+        "trim": {"min_occupancy": 0.5},
+        "settings": {"length": 12, "max_degeneracy": 5, "skip": 0, "start": 4, "end": 6},
+        "taxonomy_source": "headers",
+        "taxonomy_level": 2,
+    }
+    status, data = post(client, "/universal", body)
+    assert status == 200
+    assert (data["sequences"], data["columns_in"], data["columns_out"]) == (4, 30, 29)
+    assert (data["max_degeneracy"], data["max_degeneracy_requested"]) == (4, 5)
+    assert data["taxa"] == ["Bacteria;Firmicutes", "Bacteria;Proteobacteria", "(unassigned)"]
+    assert [w["pos"] for w in data["windows"]] == [4, 5, 6]
+    first = data["windows"][0]
+    assert first["primer"] == "TTTGATYMTGGC" and first["matching"] == 4 and first["fraction"] == 1
+    assert first["taxa"] == [
+        {"spanning": 2, "matching": 2},
+        {"spanning": 1, "matching": 1},
+        {"spanning": 1, "matching": 1},
+    ]
+
+    table = {**body, "taxonomy_source": "table", "taxonomy": "a1\tB;F\na2\tB;F\n"}
+    status, data = post(client, "/universal", table)
+    assert status == 200 and data["taxa"] == ["B;F", "(unassigned)"]
+
+    status, data = post(
+        client,
+        "/universal/trim",
+        {"alignment": UNIVERSAL_ALIGNMENT, "trim": {"min_occupancy": 0.5}},
+    )
+    assert status == 200 and data["columns"] == 29
+    assert data["fasta"].splitlines()[4:6] == [">a3", "AGAGTTTGATCCTGGCTCAgACGAACGCT"]
+
+
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        ({"alignment": ""}, "FASTA"),
+        ({"alignment": ">a\nACGT\n>b\nACG"}, "same length"),
+        ({"alignment": UNIVERSAL_ALIGNMENT, "trim": {"reference": "zz"}}, "not in the alignment"),
+        ({"alignment": UNIVERSAL_ALIGNMENT, "settings": {"length": 40}}, "longer than"),
+        ({"alignment": UNIVERSAL_ALIGNMENT, "taxonomy_source": "silva"}, "Unknown taxonomy"),
+        (
+            {"alignment": UNIVERSAL_ALIGNMENT, "taxonomy_source": "table", "taxonomy": "x\tB"},
+            "None of the",
+        ),
+        ({"alignment": UNIVERSAL_ALIGNMENT, "settings": {"length": "12"}}, "whole number"),
+        ({"alignment": UNIVERSAL_ALIGNMENT, "primer_length": 12}, "unknown field"),
+    ],
+)
+def test_universal_errors(client: FlaskClient, body: dict[str, object], message: str) -> None:
+    status, data = post(client, "/universal", body)
+    assert status == 400 and message in data["error"]
+
+
 def test_enzymes(client: FlaskClient) -> None:
     status, data = post(client, "/enzymes", {"region": "GAATTC"})
     assert status == 200

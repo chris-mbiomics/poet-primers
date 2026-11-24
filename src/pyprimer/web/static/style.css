@@ -323,3 +323,28 @@ dialog::backdrop { background: rgb(0 0 0 / .35); }
 .iupac-table td { padding: 3px 8px 3px 0; border-bottom: 1px solid var(--border); }
 .iupac-table td.code { font: 700 13px var(--mono); }
 .iupac-table td.base { font: 700 12.5px var(--mono); color: var(--b); width: 22px; }
+
+/* Universal primers (DegePrime) */
+.field.inline { flex-direction: row; align-items: center; gap: 6px; }
+.field.inline input { width: 74px; }
+.coverage-wrap {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 0;
+}
+.coverage-plot { display: block; width: 100%; }
+.coverage-plot text { fill: var(--muted); font-size: 10.5px; font-family: var(--sans); }
+.coverage-plot .grid { stroke: var(--border); }
+.coverage-plot .bar { fill: var(--accent); opacity: .55; cursor: pointer; }
+.coverage-plot .bar:hover, .coverage-plot .bar.sel { opacity: 1; }
+.coverage-plot .entropy { fill: none; stroke: var(--muted); stroke-width: 1.2; }
+.coverage-plot .sel-line { stroke: var(--rev); stroke-width: 1.5; stroke-dasharray: 3 2; }
+.coverage-plot .legend .bar { opacity: 1; cursor: default; }
+.details.universal h3 { margin: 0 0 6px; font-size: 13px; }
+.details.universal .primer-card h3 { color: var(--muted); font-weight: 600; font-size: 12px; }
+.taxa-wrap { max-height: 32vh; }
+.results-table.taxa tbody tr { cursor: default; }
+.results-table.taxa td.taxon { max-width: 360px; overflow: hidden; text-overflow: ellipsis; }
+.results-table.taxa td.cov .meter { vertical-align: middle; margin-right: 8px; }
+.meter { display: inline-block; width: 80px; height: 7px; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--border); overflow: hidden; }
+.meter span { display: block; height: 100%; background: var(--accent); }
+.advanced summary { font-size: 12.5px; }
+.advanced > .grid, .advanced > .check { margin-top: 10px; }

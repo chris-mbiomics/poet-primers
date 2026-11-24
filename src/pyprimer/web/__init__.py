@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from flask import Flask, render_template
@@ -20,6 +21,7 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
         MAX_CONTENT_LENGTH=8 * 1024 * 1024,
         MAX_SEQUENCE_LENGTH=MAX_SEQUENCE_LENGTH,
         MAX_PAIRS=2000,
+        DEGEPRIME_WORKERS=min(8, os.cpu_count() or 1),
         JSON_SORT_KEYS=False,
     )
     if config:
