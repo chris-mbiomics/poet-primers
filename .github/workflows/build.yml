@@ -18,7 +18,7 @@ jobs:
         include:
           - os: ubuntu-22.04 # oldest supported glibc -> widest AppImage compatibility
           - os: windows-latest
-          - os: macos-14 # Apple silicon
+          - os: macos-latest # Apple silicon (arm64)
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
