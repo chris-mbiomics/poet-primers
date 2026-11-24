@@ -54,8 +54,8 @@ page. You don't need to install Python or anything else.
 
 Double-clicking opens POET in its own window. The same file also works as
 the [command line](#command-line) tool when you give it a command, for example
-`./poet-primers-2.0.0-x86_64.AppImage analyse GAGAATGTGGGCTCTCAAGC` or
-`poet-primers-2.0.0-windows-x64.exe serve --open` to use your browser instead.
+`./poet-primers-2.0.1-x86_64.AppImage analyse GAGAATGTGGGCTCTCAAGC` or
+`poet-primers-2.0.1-windows-x64.exe serve --open` to use your browser instead.
 
 ### Install with Python
 
