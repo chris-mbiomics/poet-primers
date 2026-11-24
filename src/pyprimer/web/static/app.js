@@ -1132,7 +1132,7 @@
         : "";
       box.innerHTML = `
         <div class="detail-head"><h2>Window at position ${w.pos}</h2><span class="muted">alignment column ${w.column.toLocaleString()}</span><span class="spacer"></span>
-          <button type="button" class="btn small" data-action="open-degenerate">Open in Degenerate primers</button></div>
+          <button type="button" class="btn small" data-action="open-degenerate">Open in Degenerate analysis</button></div>
         <div class="primer-cards">
           <div class="primer-card fwd"><h3>As forward primer (5′→3′)</h3><div class="ino-row"><span class="ino-seq">${escapeHtml(w.primer)}</span>${copyButton(w.primer)}</div></div>
           <div class="primer-card rev"><h3>As reverse primer (5′→3′)</h3><div class="ino-row"><span class="ino-seq">${escapeHtml(rc)}</span>${copyButton(rc)}</div></div>

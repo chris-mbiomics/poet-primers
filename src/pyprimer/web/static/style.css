@@ -295,7 +295,7 @@ dialog::backdrop { background: rgb(0 0 0 / .35); }
 .autodimer-section h3 { margin: 4px 0 8px; }
 .autodimer-section h3 .muted { font-weight: 400; text-transform: none; letter-spacing: 0; }
 
-/* Degenerate primers */
+/* Degenerate analysis */
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
 .tile { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; }
 .tile .label { font-size: 12px; color: var(--muted); font-weight: 600; }

@@ -23,8 +23,8 @@ and give identical output. What changed is listed under
 - [Getting started](#getting-started)
 - [Designing primers](#designing-primers)
 - [Checking primers you already have](#checking-primers-you-already-have)
-- [Degenerate (wobble) primers](#degenerate-wobble-primers)
 - [Universal primers from an alignment (DegePrime)](#universal-primers-from-an-alignment-degeprime)
+- [Degenerate (wobble) primers](#degenerate-wobble-primers)
 - [Screening a multiplex set (AutoDimer)](#screening-a-multiplex-set-autodimer)
 - [Preferences](#preferences)
 - [Command line](#command-line)
@@ -130,43 +130,15 @@ length, GC, ΔH/ΔS/ΔG and every predicted primer-dimer, using the reaction
 conditions from *Preferences*. Use it to check primers from a paper or an
 older design before ordering.
 
-## Degenerate (wobble) primers
-
-Universal and family-specific primers often carry wobble positions written
-as IUPAC codes, such as `AGAGTTTGATYMTGGCTCAG` (Y = C or T, M = A or C).
-Such a primer is really an equimolar pool of every oligo the codes allow.
-The **Degenerate primers** tab describes that pool:
-
-1. Enter the primer, 5′→3′, and click **Analyse**. All IUPAC codes are
-   accepted (U is read as T); an *IUPAC nucleotide codes* table is under
-   the form.
-2. The **pool complexity** is the number of distinct oligos (4 in the
-   example). Tm and %GC are given as minimum / average / maximum over the
-   pool, using the reaction conditions from *Preferences*; the average
-   assumes every oligo is equally abundant.
-3. A **sequence logo** shows which bases each position carries and in what
-   proportion.
-4. **Disambiguate** lists every oligo with its own Tm and %GC, with the wobble
-   positions highlighted. *Export table (TSV)* downloads the list.
-5. **Inosine replacement** replaces every position that stands for at least
-   *N* bases with inosine (I), which pairs with any base. With *N* = 2 every
-   wobble position is replaced, and the example becomes
-   `AGAGTTTGATIITGGCTCAG`, a single oligo. Higher values replace only the
-   most degenerate codes (3: B, D, H, V and N; 4: N only).
-
-Tm is only calculated for pools of up to 4,096 oligos; %GC is exact for any
-pool size. There are no nearest-neighbour parameters for inosine, so the Tm
-of the inosine primer is not calculated.
-
 ## Universal primers from an alignment (DegePrime)
 
 Primers meant for a whole group of organisms, such as 16S rRNA primers for
 all bacteria, must bind a region that differs slightly between species. The
-**Universal primers** tab takes an alignment of those sequences and finds,
+**DegePrime** tab takes an alignment of those sequences and finds,
 at every position, the degenerate primer that matches as many of them as
 possible.
 
-![Universal primers: coverage along a 200-sequence alignment and the best primers found](docs/images/universal.webp)
+![DegePrime: coverage along a 200-sequence alignment and the best primers found](docs/images/universal.webp)
 
 1. Paste or open a multiple sequence alignment in FASTA format (from MAFFT,
    Clustal, SILVA, RDP, …).
@@ -189,7 +161,7 @@ possible.
 
 Pick a high-coverage position near each end of the region you want to
 amplify, use the second primer's reverse complement, and check the pair on
-the **Primer analysis** and **AutoDimer** tabs. *Open in Degenerate primers*
+the **Primer analysis** and **AutoDimer** tabs. *Open in Degenerate analysis*
 shows a primer's full oligo pool, and *Export DegePrime TSV* saves the
 results table. Searches of up to about 1,000 sequences by 2,000 columns take
 seconds.
@@ -197,6 +169,34 @@ seconds.
 This is a port of DegePrime by Hugerth et al.; see
 [DegePrime details](#degeprime-details) for how it works and where it
 differs.
+
+## Degenerate (wobble) primers
+
+Universal and family-specific primers often carry wobble positions written
+as IUPAC codes, such as `AGAGTTTGATYMTGGCTCAG` (Y = C or T, M = A or C).
+Such a primer is really an equimolar pool of every oligo the codes allow.
+The **Degenerate analysis** tab describes that pool:
+
+1. Enter the primer, 5′→3′, and click **Analyse**. All IUPAC codes are
+   accepted (U is read as T); an *IUPAC nucleotide codes* table is under
+   the form.
+2. The **pool complexity** is the number of distinct oligos (4 in the
+   example). Tm and %GC are given as minimum / average / maximum over the
+   pool, using the reaction conditions from *Preferences*; the average
+   assumes every oligo is equally abundant.
+3. A **sequence logo** shows which bases each position carries and in what
+   proportion.
+4. **Disambiguate** lists every oligo with its own Tm and %GC, with the wobble
+   positions highlighted. *Export table (TSV)* downloads the list.
+5. **Inosine replacement** replaces every position that stands for at least
+   *N* bases with inosine (I), which pairs with any base. With *N* = 2 every
+   wobble position is replaced, and the example becomes
+   `AGAGTTTGATIITGGCTCAG`, a single oligo. Higher values replace only the
+   most degenerate codes (3: B, D, H, V and N; 4: N only).
+
+Tm is only calculated for pools of up to 4,096 oligos; %GC is exact for any
+pool size. There are no nearest-neighbour parameters for inosine, so the Tm
+of the inosine primer is not calculated.
 
 ## Screening a multiplex set (AutoDimer)
 
@@ -339,7 +339,7 @@ Deliberate differences from the NIST service:
 
 ## DegePrime details
 
-The Universal primers tab ports [DegePrime](https://github.com/EnvGen/DEGEPRIME)
+The DegePrime tab ports [DegePrime](https://github.com/EnvGen/DEGEPRIME)
 (Hugerth et al., *Appl Environ Microbiol* 80:5116–5123, 2014) and its three
 scripts:
 `TrimAlignment.pl` (trimming), `DegePrime.pl` (the primer search, with
