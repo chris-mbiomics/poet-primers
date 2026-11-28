@@ -647,14 +647,23 @@ def degeprime(
     if len(chunks) == 1:
         windows = _scan(job, first, last)
     else:
-        context = multiprocessing.get_context("forkserver")
-        with ProcessPoolExecutor(len(chunks), mp_context=context) as executor:
+        with ProcessPoolExecutor(len(chunks), mp_context=_mp_context()) as executor:
             los, his = zip(*chunks, strict=True)
             parts = executor.map(_scan, itertools.repeat(job), los, his)
             windows = [w for part in parts for w in part]
     return DegePrimeResult(
         length=s.length, max_degeneracy=max_deg, windows=tuple(windows), taxa=taxa
     )
+
+
+def _mp_context() -> multiprocessing.context.BaseContext:
+    """Process start method for the parallel scan.
+
+    ``forkserver`` where the platform has it (Linux, macOS): unlike ``fork``
+    it is safe in the threaded web server. Windows only offers ``spawn``.
+    """
+    method = "forkserver" if "forkserver" in multiprocessing.get_all_start_methods() else "spawn"
+    return multiprocessing.get_context(method)
 
 
 def _chunks(first: int, last: int, n: int) -> list[tuple[int, int]]:
