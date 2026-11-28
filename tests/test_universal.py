@@ -213,6 +213,17 @@ def test_results_are_reproducible_and_independent_of_range(monkeypatch: pytest.M
     assert parallel == full
 
 
+def test_parallel_scan_works_without_forkserver(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Windows has no forkserver start method ("cannot find context for 'forkserver'").
+    monkeypatch.setattr(universal.multiprocessing, "get_all_start_methods", lambda: ["spawn"])
+    assert universal._mp_context().get_start_method() == "spawn"
+    seqs = _diverse(3)
+    settings = DegePrimeSettings(length=10, max_degeneracy=6, skip=0, iterations=10)
+    full = degeprime(seqs, settings)
+    monkeypatch.setattr(universal, "PARALLEL_WORK", 0)
+    assert degeprime(seqs, settings, workers=2) == full
+
+
 def test_columns_map_to_untrimmed_alignment() -> None:
     trimmed = trim_alignment(aln("A-CGTA", "A-CGTA", "AGCGTA"), TrimSettings(0.5))
     windows = degeprime(trimmed.seqs, DegePrimeSettings(length=3, skip=0), columns=trimmed.columns)
